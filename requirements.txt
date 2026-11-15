@@ -1,0 +1,15 @@
+vaderSentiment
+textblob
+pandas
+matplotlib
+streamlit
+scikit-learn
+seaborn
+python-dotenv
+google-genai<2.0
+faiss-cpu
+fastapi
+uvicorn[standard]
+httpx
+pyjwt[crypto]
+pytest

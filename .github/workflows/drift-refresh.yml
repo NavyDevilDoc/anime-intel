@@ -1,0 +1,226 @@
+name: MAL Drift Refresh
+
+# Quarterly (ish) full-vault drift refresh — splits the three
+# `--refresh` passes (rating / subtype / source) out of
+# seasonal-ingest.yml. The passes iterate the full vault (~6,700 shows
+# × ~1s per Jikan call ≈ ~110 min per pass), which the weekly seasonal
+# ingest can't fit inside the 120-min GitHub Actions budget alongside
+# its enrichment chain. Keeping them separate lets weekly ingests stay
+# fast and lets drift refreshes have the room they need.
+#
+# Trigger: workflow_dispatch only. No cron because Railway Jikan + Mongo
+# are paused outside active ingest windows per the operator's cost
+# model — the operator unpauses, runs this workflow, re-pauses.
+#
+# Recommended cadence: quarterly, OR after a major vault composition
+# change (vault-floor expansion, large popularity backfill, media-type
+# whitelist change). The three drifts catch MAL re-classifications of
+# existing rows — a slow-moving signal where quarterly cadence is
+# plenty.
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_rating:
+        description: 'Skip MAL rating drift refresh'
+        required: false
+        default: false
+        type: boolean
+      skip_subtype:
+        description: 'Skip MAL subtype drift refresh'
+        required: false
+        default: false
+        type: boolean
+      skip_source:
+        description: 'Skip MAL source-material drift refresh'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  drift-refresh:
+    runs-on: ubuntu-latest
+    # 6-hour timeout — safe margin for 3 serial full-vault passes
+    # (~110 min each at current vault size).
+    timeout-minutes: 360
+    permissions:
+      contents: write         # for git push origin <drift-branch>
+      pull-requests: write    # for gh pr create
+
+    env:
+      MAL_CLIENT_ID: ${{ secrets.MAL_CLIENT_ID }}
+      MAL_CLIENT_SECRET: ${{ secrets.MAL_CLIENT_SECRET }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      JIKAN_BASE_URL: ${{ secrets.JIKAN_BASE_URL }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Write environment file
+        run: |
+          cat > env_variables.env << 'ENVEOF'
+          MAL_CLIENT_ID=${{ secrets.MAL_CLIENT_ID }}
+          MAL_CLIENT_SECRET=${{ secrets.MAL_CLIENT_SECRET }}
+          GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}
+          JIKAN_BASE_URL=${{ secrets.JIKAN_BASE_URL }}
+          ENVEOF
+
+      # Pulse check — same self-healing pattern as seasonal-ingest.yml.
+      # The three drift passes don't actually hit the MAL OAuth path
+      # (they're pure Jikan reads), but the pulse check costs <1s and
+      # keeps the Supabase token row warm.
+      - name: Pulse check - validate MAL token (refresh on miss)
+        run: |
+          python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from analysis.mal_token_store import read_token
+          from src.mal_auth_helper import pulse_check, refresh_mal_token
+
+          stored = read_token()
+          if not stored or not stored.get('access_token'):
+              print('[ERROR] No MAL token row in Supabase mal_oauth_token.')
+              sys.exit(1)
+
+          if pulse_check(stored['access_token']):
+              print('[OK] MAL token is valid.')
+              sys.exit(0)
+
+          print('[INFO] Access token rejected by MAL; refreshing via Supabase...')
+          new_data = refresh_mal_token(return_data=True)
+          if not new_data or not new_data.get('access_token'):
+              print('[ERROR] Refresh failed.')
+              sys.exit(1)
+          if not pulse_check(new_data['access_token']):
+              print('[ERROR] Refreshed token still rejected by MAL.')
+              sys.exit(1)
+          print('[OK] Token refreshed and persisted to Supabase.')
+          "
+
+      # Fail-fast Jikan health check — same gate as seasonal-ingest.yml.
+      # Without this, a paused Railway Jikan silently fails every drift
+      # row and we end up with a 6-hour-long no-op workflow.
+      - name: Jikan API health check (fail fast if reviews subsystem is down)
+        env:
+          JIKAN_BASE_URL: ${{ secrets.JIKAN_BASE_URL }}
+        run: |
+          python -c "
+          import os, requests, sys
+          base_url = (os.environ.get('JIKAN_BASE_URL') or '').strip()
+          if not base_url:
+              print('[ERROR] JIKAN_BASE_URL secret is not set.')
+              print('        Set it in GitHub repo Secrets to the self-hosted')
+              print('        Railway instance before the workflow can run.')
+              sys.exit(1)
+          endpoint = f'{base_url}/anime/1/reviews'
+          print(f'[INFO] Probing {endpoint}')
+          try:
+              r = requests.get(endpoint, timeout=15)
+          except Exception as e:
+              print(f'[ERROR] Jikan health check failed at network layer: {type(e).__name__}: {e}')
+              sys.exit(1)
+          if r.status_code != 200:
+              print(f'[ERROR] Jikan /reviews returned HTTP {r.status_code}')
+              print('       Aborting to prevent silent partial drift refresh.')
+              sys.exit(1)
+          try:
+              n = len(r.json().get('data', []))
+          except Exception as e:
+              print(f'[ERROR] Jikan /reviews response not valid JSON: {e}')
+              sys.exit(1)
+          if n == 0:
+              print('[ERROR] Jikan /reviews returned 200 but zero reviews for MAL#1 (Cowboy Bebop).')
+              print('       Probable Jikan subsystem degradation — aborting.')
+              sys.exit(1)
+          print(f'[OK] Jikan /reviews endpoint healthy: {n} reviews for MAL#1')
+          "
+
+      - name: Rating drift refresh
+        if: ${{ github.event.inputs.skip_rating != 'true' }}
+        run: python tools/backfill_ratings.py --refresh
+
+      - name: Subtype drift refresh
+        if: ${{ github.event.inputs.skip_subtype != 'true' }}
+        run: python tools/backfill_subtypes.py --refresh
+
+      - name: Source-material drift refresh
+        if: ${{ github.event.inputs.skip_source != 'true' }}
+        run: python tools/backfill_source_material.py --refresh
+
+      - name: Check for data changes
+        id: changes
+        run: |
+          # Drift refreshes only touch anime_info — no FAISS, no SEO,
+          # no similar-shows. If no rows changed, the DB diff is empty
+          # and we skip the commit entirely.
+          if git diff --quiet data/anime_intelligence_v2.db; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create branch and commit data files
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          BRANCH="data/drift-refresh-${TIMESTAMP}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add data/anime_intelligence_v2.db
+          # Drift logs are only created on first drift event; add only if present.
+          [ -f data/rating_drift_log.csv ] && git add data/rating_drift_log.csv
+          [ -f data/subtype_drift_log.csv ] && git add data/subtype_drift_log.csv
+          [ -f data/source_drift_log.csv ] && git add data/source_drift_log.csv
+          true  # protect against test-and-skip returning non-zero
+
+          git commit -m "MAL drift refresh: $(date +%Y-%m-%d)
+
+          Automated full-vault drift refresh via workflow_dispatch.
+
+          Co-Authored-By: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+          git push origin "$BRANCH"
+
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Open pull request
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --title "MAL drift refresh: $(date +%Y-%m-%d)" \
+            --body "## Summary
+          - Full-vault drift refresh via workflow_dispatch
+          - Catches MAL re-classifications of rating / subtype / source on existing vault rows
+          - DB-only change (no FAISS, no SEO, no similar-shows regeneration)
+
+          ## Drift logs
+          See \`data/rating_drift_log.csv\`, \`data/subtype_drift_log.csv\`, \`data/source_drift_log.csv\` (whichever appear in the diff) for per-row before/after.
+
+          ## Review checklist
+          - [ ] Spot-check a few drifted rows in the DB
+          - [ ] Drift log row counts look reasonable (not an avalanche indicating a MAL schema change)
+          - [ ] Merge when satisfied
+
+          🤖 Generated by GitHub Actions" \
+            --base main
+
+      - name: No changes detected
+        if: steps.changes.outputs.changed != 'true'
+        run: echo "ℹ️ No drift detected. Nothing to commit."

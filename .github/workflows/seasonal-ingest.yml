@@ -1,0 +1,489 @@
+name: Seasonal Anime Ingestion
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: 'Season to ingest (leave empty for auto-detect)'
+        required: false
+        default: ''
+        type: string
+      year:
+        description: 'Year to ingest (leave empty for auto-detect)'
+        required: false
+        default: ''
+        type: string
+      skip_staff_enrichment:
+        description: 'Skip staff (director/composer/etc.) enrichment for newly ingested shows'
+        required: false
+        default: false
+        type: boolean
+      skip_similar_shows:
+        description: 'Skip similar-shows regeneration (frontend/public/data/similar/*.json)'
+        required: false
+        default: false
+        type: boolean
+      skip_poster_backfill:
+        description: 'Skip MAL poster URL backfill for newly ingested shows (PR #148 pattern)'
+        required: false
+        default: false
+        type: boolean
+      skip_series_clustering:
+        description: 'Skip series_id clustering for newly ingested shows (PR #77 pattern)'
+        required: false
+        default: false
+        type: boolean
+      skip_seo_export:
+        description: 'Skip seo_profiles.json regeneration (feeds SEO static pages + offline Encyclopedia)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    # GITHUB_TOKEN defaults to read-only scopes since Feb 2023. The
+    # commit + push step and the gh pr create step both need write
+    # access. Without this, the workflow completes the ingest but
+    # fails at push time with HTTP 403 (surfaced 2026-07-12 during
+    # the post-PR-#88 Spring 2026 attempt).
+    permissions:
+      contents: write         # for git push origin <ingest-branch>
+      pull-requests: write    # for gh pr create
+
+    # Job-level env — hoisted from env_variables.env so backfill
+    # scripts (ratings / subtypes / staff / posters) that call
+    # os.environ.get(...) directly see the values without each needing
+    # a dedicated env: block or dotenv load. Latent since forever;
+    # surfaced after PR #154 retired the api.jikan.moe silent fallback
+    # in jikan_client.py — pre-#154 the backfill scripts happened to
+    # work because the client defaulted to the public API when
+    # JIKAN_BASE_URL was unset. env_variables.env file write kept for
+    # scripts that explicitly load_dotenv().
+    env:
+      MAL_CLIENT_ID: ${{ secrets.MAL_CLIENT_ID }}
+      MAL_CLIENT_SECRET: ${{ secrets.MAL_CLIENT_SECRET }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      JIKAN_BASE_URL: ${{ secrets.JIKAN_BASE_URL }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Initiative 3: MAL tokens now live in the Supabase mal_oauth_token
+      # singleton, not in GitHub Secrets. The MAL_ACCESS_TOKEN /
+      # MAL_REFRESH_TOKEN secrets are kept for one cycle as belt-and-
+      # suspenders but no longer materialized to token_data.json.
+      - name: Write environment file
+        run: |
+          cat > env_variables.env << 'ENVEOF'
+          MAL_CLIENT_ID=${{ secrets.MAL_CLIENT_ID }}
+          MAL_CLIENT_SECRET=${{ secrets.MAL_CLIENT_SECRET }}
+          GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}
+          JIKAN_BASE_URL=${{ secrets.JIKAN_BASE_URL }}
+          ENVEOF
+
+      # Self-healing pulse check: read the access_token from Supabase,
+      # ping /users/@me, and if it's expired, trigger a refresh right
+      # here. The refresh writes the rotated pair back to Supabase via
+      # mal_token_store.write_token — so the next run reads fresh tokens
+      # automatically. No GitHub Secrets churn needed across rotations.
+      - name: Pulse check - validate MAL token (refresh on miss)
+        run: |
+          python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from analysis.mal_token_store import read_token
+          from src.mal_auth_helper import pulse_check, refresh_mal_token
+
+          stored = read_token()
+          if not stored or not stored.get('access_token'):
+              print('[ERROR] No MAL token row in Supabase mal_oauth_token.')
+              print('   Run tools/seed_mal_token.py locally to bootstrap.')
+              sys.exit(1)
+
+          if pulse_check(stored['access_token']):
+              print('[OK] MAL token is valid.')
+              sys.exit(0)
+
+          print('[INFO] Access token rejected by MAL; refreshing via Supabase...')
+          new_data = refresh_mal_token(return_data=True)
+          if not new_data or not new_data.get('access_token'):
+              print('[ERROR] Refresh failed.')
+              print('   Inspect Supabase mal_oauth_token row and verify CLIENT_ID/SECRET.')
+              sys.exit(1)
+          if not pulse_check(new_data['access_token']):
+              print('[ERROR] Refreshed token still rejected by MAL.')
+              sys.exit(1)
+          print('[OK] Token refreshed and persisted to Supabase.')
+          "
+
+      # Fail-fast Jikan health check — added post-July-2026 outage
+      # where /reviews returned 504 across every anime. Without this
+      # gate, the workflow processed ~100 shows against a broken
+      # Jikan and silently quarantined 65/66 Spring 2026 titles while
+      # reporting SUCCESS. Probes /anime/1/reviews (Cowboy Bebop,
+      # thousands of reviews always available) — the exact endpoint
+      # the ingester depends on, not just Jikan's root.
+      # Post-Phase-C (Jikan Migration Initiative): honors
+      # JIKAN_BASE_URL so the health check probes whichever Jikan
+      # instance the ingester will actually use.
+      # Phase G: public api.jikan.moe fallback retired. The secret must
+      # be set — if it isn't, the health check fails fast with an
+      # actionable error rather than silently probing a broken upstream.
+      - name: Jikan API health check (fail fast if reviews subsystem is down)
+        env:
+          JIKAN_BASE_URL: ${{ secrets.JIKAN_BASE_URL }}
+        run: |
+          python -c "
+          import os, requests, sys
+          base_url = (os.environ.get('JIKAN_BASE_URL') or '').strip()
+          if not base_url:
+              print('[ERROR] JIKAN_BASE_URL secret is not set.')
+              print('        Set it in GitHub repo Secrets to the self-hosted')
+              print('        Railway instance before the workflow can run.')
+              sys.exit(1)
+          endpoint = f'{base_url}/anime/1/reviews'
+          print(f'[INFO] Probing {endpoint}')
+          try:
+              r = requests.get(endpoint, timeout=15)
+          except Exception as e:
+              print(f'[ERROR] Jikan health check failed at network layer: {type(e).__name__}: {e}')
+              sys.exit(1)
+          if r.status_code != 200:
+              print(f'[ERROR] Jikan /reviews returned HTTP {r.status_code}')
+              print('       Aborting to prevent silent partial ingest.')
+              sys.exit(1)
+          try:
+              n = len(r.json().get('data', []))
+          except Exception as e:
+              print(f'[ERROR] Jikan /reviews response not valid JSON: {e}')
+              sys.exit(1)
+          if n == 0:
+              print('[ERROR] Jikan /reviews returned 200 but zero reviews for MAL#1 (Cowboy Bebop).')
+              print('       This should not happen for a show with thousands of reviews.')
+              print('       Probable Jikan subsystem degradation — aborting.')
+              sys.exit(1)
+          print(f'[OK] Jikan /reviews endpoint healthy: {n} reviews for MAL#1')
+          "
+
+      - name: Run seasonal ingestion
+        run: |
+          python -c "
+          import asyncio, sys
+          sys.path.insert(0, '.')
+          from vault_manager import auto_seasonal_sweep
+
+          season = '${{ github.event.inputs.season }}' or None
+          year = int('${{ github.event.inputs.year }}') if '${{ github.event.inputs.year }}' else None
+
+          result = asyncio.run(auto_seasonal_sweep(season=season, year=year))
+          print(f'Ingested: {result[\"season\"].upper()} {result[\"year\"]}')
+          "
+
+      # Backfill rating / subtype / source for the newly ingested rows.
+      # Each tool's default mode queries `WHERE <col> IS NULL`, so these
+      # are near-instant for a weekly ingest (~3-10 new shows × 1s per
+      # Jikan call) and don't touch the rest of the vault. The full-vault
+      # `--refresh` drift passes used to live here as well but were
+      # pulled out into .github/workflows/drift-refresh.yml — three serial
+      # ~110-min full-vault passes couldn't fit the 120-min workflow
+      # budget alongside the enrichment chain (Fall 2026 ingest, PR #184,
+      # was the forcing function). Dispatch drift-refresh.yml quarterly or
+      # after major vault-composition changes.
+      - name: Rating backfill (new shows only)
+        run: python tools/backfill_ratings.py
+
+      - name: Subtype backfill (new shows only)
+        run: python tools/backfill_subtypes.py
+
+      - name: Source-material backfill (new shows only)
+        run: python tools/backfill_source_material.py
+
+      # Staff (director / composer / original creator / series composition /
+      # character design) enrichment for newly ingested shows. Runs in
+      # --only-missing mode so it's a pure additive pass over the shows
+      # that the seasonal ingester just added — existing rows are untouched.
+      # No --refresh counterpart: unlike ratings and subtypes, staff
+      # attribution is stable post-airing (a show's director doesn't change),
+      # so a periodic drift check would be pure cost with no expected drift
+      # to catch. If a drift check is ever needed, add it as a separate
+      # workflow_dispatch input paired with a --refresh mode in
+      # backfill_staff.py.
+      #
+      # Tripwire disabled with --no-abort for this invocation. The
+      # tripwire in backfill_staff.py was calibrated against the Phase A
+      # full-vault baseline (2.9% empty rate across a representative
+      # subtype distribution). --only-missing mode SELECTS FOR shows
+      # structurally missing staff data — the residual cohort is heavily
+      # skewed toward subtypes MAL rarely populates staff for (ONA 120,
+      # NULL 85, Music 56, Special 49, CM 6) plus new pre-classification
+      # seasonal shows. Empty rate in the first window ranges 50-62% and
+      # is sensitive to which MAL IDs cluster early — no single threshold
+      # catches a true brownout cleanly while tolerating this bias.
+      #
+      # Two runs confirmed this experimentally (2026-10-04 Summer ingest):
+      # - threshold=0.30 (default): fired at 50/468 with 50% empty
+      # - threshold=0.60: fired at 56/468 with 62% empty
+      #
+      # Upstream health was verified healthy during both runs (direct
+      # probe of jikan-rest Railway /anime/1/staff returned full data).
+      #
+      # Trade-off accepted: we lose automated brownout detection for this
+      # step but retain compensating signals — the workflow-start Jikan
+      # /reviews health check, the ratings/subtype steps that also hit
+      # Jikan, per-show HTTP error logs (true brownout returns 502/504
+      # not empties), and the auto-PR manifest for human review.
+      #
+      # Follow-up candidate: subtype-aware tripwire inside the tool —
+      # only count empties against subtypes where staff data is expected.
+      # Would allow re-enabling automated detection in --only-missing
+      # mode. Not shipped here; would require touching the tool.
+      #
+      # Exit code policy: backfill_staff.py uses 0=clean, 1=had per-show
+      # errors (visible in logs), 2=tripwire aborted. We tolerate exit 1
+      # here because the --only-missing cohort reliably contains a few
+      # known-broken shows that MAL returns 404 for (e.g., mal_id 58689
+      # 'Genshin Impact: The Song Burning in the Embers' + 61840 'Genshin
+      # Impact: Star Odyssey' — the same two shows that lacked poster URLs
+      # in PR #148's backfill). Those are structural MAL data gaps, not
+      # run-level failures, and shouldn't block the four downstream steps
+      # (poster backfill / series clustering / similar-shows / SEO export).
+      # Exit 2 (tripwire) is still treated as fatal — currently unreachable
+      # with --no-abort but preserved for safety if --no-abort is ever
+      # removed.
+      - name: Staff enrichment (new shows only)
+        if: ${{ github.event.inputs.skip_staff_enrichment != 'true' }}
+        run: |
+          set +e
+          python tools/backfill_staff.py --only-missing --delay 200 --no-abort
+          CODE=$?
+          set -e
+          if [ $CODE -eq 0 ]; then
+            echo "[workflow] Staff backfill completed cleanly."
+          elif [ $CODE -eq 1 ]; then
+            echo "[workflow] Staff backfill completed with per-show errors (tolerable). See step logs for per-mal_id error kinds."
+          elif [ $CODE -eq 2 ]; then
+            echo "::error::Staff backfill tripwire fired (exit 2) — aborting workflow"
+            exit 2
+          else
+            echo "::error::Staff backfill exited unexpectedly with code $CODE"
+            exit $CODE
+          fi
+
+      # Poster URL backfill (Landing Redesign PR #148). Populates
+      # poster_url_large / poster_url_medium on anime_info from MAL v2's
+      # main_picture field. --only-missing is additive: untouched rows
+      # already have URLs. 2.5s default sleep per call means ~50 new
+      # shows takes ~2 min of wallclock — well within the 120 min
+      # workflow timeout. Without this step, newly ingested shows render
+      # the text-only fallback card on /anime/{slug}/ full-profile
+      # pages (PR #158 cover art surface).
+      # Exit code policy — same shape as the staff enrichment wrapper
+      # above. backfill_poster_urls.py uses `return 0 if
+      # manifest.failed_count == 0 else 1` (tools/backfill_poster_urls.py
+      # L426), so any failed show flips the exit code. The --only-missing
+      # cohort reliably contains the two Genshin Impact game-trailer
+      # shows that MAL returns 404 for (mal_id 58689 + 61840 — flagged
+      # since PR #148's original poster backfill as the only two in the
+      # 6,428-row vault lacking MAL entries). Those are structural MAL
+      # data gaps, not run-level failures, and shouldn't block the three
+      # remaining downstream steps (series clustering / similar-shows /
+      # SEO export). The manifest JSON written by the tool is the
+      # audit trail — a human reviewing the auto-PR sees exactly which
+      # shows failed via the `no_mal_entry` bucket.
+      - name: Poster URL backfill (new shows only)
+        if: ${{ github.event.inputs.skip_poster_backfill != 'true' }}
+        run: |
+          set +e
+          python tools/backfill_poster_urls.py --only-missing
+          CODE=$?
+          set -e
+          if [ $CODE -eq 0 ]; then
+            echo "[workflow] Poster backfill completed cleanly."
+          elif [ $CODE -eq 1 ]; then
+            echo "[workflow] Poster backfill completed with per-show failures (tolerable). See the manifest JSON at data/poster_backfill_manifest_*.json for failure-bucket breakdown."
+          else
+            echo "::error::Poster backfill exited unexpectedly with code $CODE"
+            exit $CODE
+          fi
+
+      # Series clustering (Initiative 1 / PR #77). Computes series_id on
+      # anime_info via the two-pass MAL-relations algorithm so new shows
+      # join their franchise clusters (Entry X of N pills, dropped-sibling
+      # collapse on Find a Show, same-series exclusion on Shows Like This).
+      # vault_enrichment.py --series-only skips the heavier
+      # genre/narrative/FAISS/SEO passes — pure clustering only.
+      # Deterministic + zero external calls so no retry logic needed.
+      # Must run BEFORE similar-shows regeneration since that step dedupes
+      # candidates by cluster.
+      - name: Series clustering (series_id for new shows)
+        if: ${{ github.event.inputs.skip_series_clustering != 'true' }}
+        run: python vault_enrichment.py --series-only
+
+      # Similar-shows regeneration (Item 3 / PR #TBD). Runs the full-vault
+      # pass because new shows landing during ingest change the similarity
+      # neighborhood for existing shows too — a new 2026 recommendation
+      # anchor could reasonably appear in an existing 2010s show's
+      # top-6 via personnel or thematic signal, so incremental generation
+      # would leave stale outputs on existing shows. Full run takes ~35s
+      # at ~185 shows/sec on the workflow runner; deterministic (pure
+      # FAISS + SQL, no external calls), so re-running is safe and cheap.
+      - name: Regenerate similar-shows recommendations
+        if: ${{ github.event.inputs.skip_similar_shows != 'true' }}
+        run: python tools/build_similar_shows.py
+
+      - name: Check for data changes
+        id: changes
+        run: |
+          # Consider `data/` and `frontend/public/data/similar/` as
+          # commit-worthy — the latter houses the pre-computed Item 3
+          # similar-shows recommendations, which regenerate on every
+          # seasonal ingest and need to land in the same PR as the DB
+          # + FAISS changes so the frontend stays consistent.
+          # seo_profiles.json intentionally NOT in the diff check — the
+          # exporter runs AFTER this gate, only when there's real data
+          # to export, so its presence doesn't create false positives
+          # from the generated_at timestamp changing each run.
+          if git diff --quiet data/ frontend/public/data/similar/; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      # SEO JSON export (PR #158 cover art + PR #159 synopsis strip
+      # propagate here). Gated behind the changes check: regenerating
+      # seo_profiles.json on an empty ingest would still produce a diff
+      # from the generated_at timestamp, polluting the branch with a
+      # noise commit. Only runs when there's real data to export.
+      - name: Regenerate SEO JSON
+        if: ${{ steps.changes.outputs.changed == 'true' && github.event.inputs.skip_seo_export != 'true' }}
+        run: python tools/export_seo_data.py
+
+      # Phase C manifest summary — extract the one-line summary from
+      # the manifest JSON the ingestor just wrote, expose as a step
+      # output for injection into the PR body. Reuses the dataclass's
+      # summary_line property so the format stays consistent between
+      # the ingestor's stdout summary and the PR body's summary.
+      - name: Extract ingest manifest summary
+        id: manifest
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          SUMMARY=$(python -c "
+          import glob, json, sys
+          sys.path.insert(0, '.')
+          from src.seasonal_ingest_manifest import SeasonalIngestManifest
+          manifests = sorted(glob.glob('data/seasonal_ingest_manifests/*.json'))
+          if not manifests:
+              print('(no manifest generated)')
+          else:
+              with open(manifests[-1]) as f:
+                  d = json.load(f)
+              print(SeasonalIngestManifest(**d).summary_line)
+          ")
+          echo "summary=$SUMMARY" >> $GITHUB_OUTPUT
+
+      - name: Create branch and commit data files
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          SEASON="${{ github.event.inputs.season }}"
+          YEAR="${{ github.event.inputs.year }}"
+          # Timestamp-suffix the branch name so retries don't collide
+          # with a prior run's still-open (or unreaped-post-merge)
+          # branch. Surfaced 2026-07-13: post-PR-#90-merge re-run of
+          # the same season pushed 1e6bb90 to a fresh local branch,
+          # rejected because origin still had the merged branch. With
+          # per-run timestamps, each run gets a unique ref.
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          if [ -z "$SEASON" ] || [ -z "$YEAR" ]; then
+            BRANCH="data/seasonal-ingest-${TIMESTAMP}"
+          else
+            BRANCH="data/${SEASON}-${YEAR}-ingest-${TIMESTAMP}"
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add data/anime_intelligence_v2.db data/anime_vector_index.faiss data/anime_vector_metadata.json
+          # Item 3 similar-shows recommendations regenerate on each ingest;
+          # keep the whole directory in the commit so removed shows also
+          # get their JSON files pruned.
+          git add frontend/public/data/similar/
+          # SEO JSON (PR #158/#159): feeds the SEO static page generator
+          # at Vercel deploy time. Only present when the SEO export step
+          # ran (gated behind the changes check), but add defensively
+          # with -f-style existence test so a skipped export doesn't
+          # break the commit.
+          [ -f frontend/public/data/seo_profiles.json ] && git add frontend/public/data/seo_profiles.json
+          # Phase C manifests — commit the diagnostic record alongside
+          # the data it describes so cross-run diff / audit works via
+          # git log. Directory is created by the ingestor on first run.
+          [ -d data/seasonal_ingest_manifests ] && git add data/seasonal_ingest_manifests/
+          # Drift logs are only created on first drift event; add only if present.
+          [ -f data/rating_drift_log.csv ] && git add data/rating_drift_log.csv
+          [ -f data/subtype_drift_log.csv ] && git add data/subtype_drift_log.csv
+          [ -f data/source_drift_log.csv ] && git add data/source_drift_log.csv
+          true  # protect against the above test-and-skip returning non-zero
+          git commit -m "Seasonal ingest: $(date +%Y-%m-%d)
+
+          Automated ingestion via workflow_dispatch.
+
+          Co-Authored-By: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+          git push origin "$BRANCH"
+
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Open pull request
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SEASON="${{ github.event.inputs.season }}"
+          YEAR="${{ github.event.inputs.year }}"
+          if [ -z "$SEASON" ] || [ -z "$YEAR" ]; then
+            TITLE="Seasonal data ingest $(date +%Y-%m-%d)"
+          else
+            TITLE="Seasonal data ingest: ${SEASON^} ${YEAR}"
+          fi
+
+          gh pr create \
+            --title "$TITLE" \
+            --body "## Summary
+          - Automated seasonal anime ingestion via workflow_dispatch
+          - Includes FAISS index sync, poster URL backfill, series clustering, staff enrichment, similar-shows regeneration, and SEO JSON export
+          - Vercel deploy triggered on merge rebuilds the SEO static pages with the new data
+          - Media-type whitelist (per Option C / PR #171): tv, movie, ova, ona, tv_special, special — Music/CM/PV excluded as noise
+
+          ## Ingest Manifest
+          ${{ steps.manifest.outputs.summary }}
+
+          If MISSED > 0, inspect the manifest JSON at \`data/seasonal_ingest_manifests/\` to identify which MAL IDs the pipeline lost track of.
+
+          ## Review checklist
+          - [ ] Spot-check a few new shows in the DB
+          - [ ] Verify FAISS vector count is reasonable
+          - [ ] Manifest MISSED count is 0 (or investigated)
+          - [ ] Spot-check a new show renders a poster on /anime/{slug}/ after Vercel deploys
+          - [ ] Spot-check at least one new show joined a franchise cluster (series_id != NULL)
+          - [ ] Merge when satisfied
+
+          🤖 Generated by GitHub Actions" \
+            --base main
+
+      - name: No changes detected
+        if: steps.changes.outputs.changed != 'true'
+        run: echo "ℹ️ No data changes detected. Nothing to commit."

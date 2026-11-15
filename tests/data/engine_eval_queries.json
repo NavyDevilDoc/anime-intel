@@ -1,0 +1,538 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-26",
+  "description": "Curated eval set for engine QUALITY measurement. Distinct from regression_baseline.json (which measures Jaccard DRIFT on output stability) — this scores actual result quality against hand-annotated ground truth. Every query gets run through the engine on eval runs; scoring: (1) precision@3 against ideal_top_3, (2) coverage@10 against ideal ∪ acceptable, (3) violation flag if any must_not_appear title surfaces. Categories break out per-report so we can see e.g. 'known-failure mean precision improved from 0.1 → 0.4 across the fan-service subset.' First-pass curation by Claude 2026-08-26 pending review.",
+
+  "categories": {
+    "vibe-anchor":     "Queries known to work well historically — regression targets. If these get worse, we broke something.",
+    "known-failure":   "Queries from the journal that returned empty or wrong results. Fixing these is the direct engine-improvement target.",
+    "franchise-title": "Users typing exact show titles into FaS. COA A adds a hint; engine should ALSO return the show itself + related shows so users who ignore the hint still get value.",
+    "slt-anchor":      "Shows-Like-This reference sets with expected thematic overlap. Tests the DNA/triangulation pipeline.",
+    "hidden-gems":     "Queries that test whether the engine surfaces non-mainstream shows (COA C context — 4x mainstream skew is the underlying concern).",
+    "intuition":       "User-flagged 'should work but doesn't' queries — first-class input from your months of hands-on experience, not derived from journal data. Populate during review."
+  },
+
+  "field_dictionary": {
+    "id": {
+      "type": "string",
+      "required": true,
+      "description": "Unique kebab-case identifier for the query entry. Convention: <category-prefix>-<descriptive-slug>. Used for stable references in scoring output, PR discussion, and git blame. Never reuse an id even after a query is retired."
+    },
+    "query": {
+      "type": "string | null",
+      "required": true,
+      "description": "The natural-language query text as a user would type it. NULL for shows_like_this mode (see reference_titles instead)."
+    },
+    "mode": {
+      "type": "string (enum)",
+      "required": true,
+      "values": ["find_a_show", "shows_like_this", "encyclopedia"],
+      "description": "Which search surface the query targets. Determines which engine entry point runs during eval."
+    },
+    "filters": {
+      "type": "object",
+      "required": true,
+      "description": "UI-level filters applied at submit. Passed through to the engine identically to how the FaS/SLT frontend passes them. All keys present; use null / 'All' for 'no filter'.",
+      "fields": {
+        "lens": {
+          "type": "string | null",
+          "values": ["Intelligent Search", "Objective Rankings", null],
+          "description": "FaS lens selector. NULL for shows_like_this mode."
+        },
+        "era": {
+          "type": "string | null",
+          "values": ["All", "1990s", "2000s", "2010s", "2020s", null],
+          "description": "Decade filter. 'All' = no restriction. NULL for shows_like_this mode."
+        },
+        "rating_max": {
+          "type": "string | null",
+          "values": ["G", "PG", "PG-13", "R", null],
+          "description": "Content rating ceiling. NULL = no restriction. Only applies to Intelligent Search lens."
+        }
+      }
+    },
+    "reference_titles": {
+      "type": "string[]",
+      "required": "shows_like_this only",
+      "description": "1-3 canonical anime titles for SLT mode. Omit for other modes. Titles must exactly match how the show is stored in the vault (english_title or romaji_title)."
+    },
+    "negative_anchors": {
+      "type": "string[]",
+      "required": "shows_like_this only, optional even then",
+      "description": "0-2 titles the user wants the results to AVOID resembling. Omit or empty array when unused."
+    },
+    "category": {
+      "type": "string (enum)",
+      "required": true,
+      "values": ["vibe-anchor", "known-failure", "franchise-title", "slt-anchor", "hidden-gems", "intuition"],
+      "description": "Classifier for eval aggregation. Scoring reports break out per-category so we can see e.g. 'known-failure mean precision improved from 0.1 → 0.4.' See top-level categories object for definitions."
+    },
+    "source": {
+      "type": "string",
+      "required": true,
+      "description": "Provenance of the query. Free-form but favor structured markers: 'journal-YYYY-MM' for extraction from search_journal (append '(returned empty)' or '(worked well)' as observed), 'user-remembered' for queries you recall using, 'user-intuition' for gut-flagged should-work cases, 'anchor-test' for engineered anchors. Multiple sources joined with '+'."
+    },
+    "ideal_top_3": {
+      "type": "string[]",
+      "required": true,
+      "description": "The 3 titles a well-behaved engine SHOULD surface in top-3 for this query. Ordered by expected desirability. Titles must match vault storage exactly. Used as the numerator for precision@3 scoring. Empty array acceptable when the query is CORRECTLY empty (too vague to score) OR when confidence=low and ideal set is genuinely unknowable — flag both cases in notes."
+    },
+    "acceptable_top_10": {
+      "type": "string[]",
+      "required": true,
+      "description": "Additional titles that would be REASONABLE to see in top-10 alongside the ideals. Doesn't count against the score to include; boosts coverage@10 when present. Ordered by rough preference but ordering isn't scored."
+    },
+    "must_not_appear": {
+      "type": "string[]",
+      "required": true,
+      "description": "Negative constraints. Titles whose surfacing would signal a bug (leaked series sibling, off-vibe result, off-topic show). Empty array is normal; populate when there's a specific failure mode to guard against. Any hit is a hard fail on this query (violation flag)."
+    },
+    "confidence": {
+      "type": "string (enum)",
+      "required": true,
+      "values": ["high", "medium", "low"],
+      "description": "Honesty flag about the ground-truth values (ideal_top_3 / acceptable_top_10). 'high' = curator has strong domain knowledge and stands by the set. 'medium' = educated guess, plausible but not authoritative. 'low' = pure speculation, please double-check before trusting per-query scores. Aggregate reports may weight or filter by confidence."
+    },
+    "notes": {
+      "type": "string",
+      "required": true,
+      "description": "Free-form context. Why this query is in the set, what specific engine behavior it tests, any live-observation baseline (e.g., 'live run 2026-08-26 returned X at top'), corrections history, or curator uncertainty flags. Not machine-consumed but load-bearing for future review sessions."
+    }
+  },
+
+  "queries": [
+
+    { "id": "vibe-gritty-military-drama",
+      "query": "gritty military drama",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "vibe-anchor",
+      "source": "user-remembered + journal-2026-08 (worked well, 7 results)",
+      "ideal_top_3": ["86 Eighty-Six", "Jormungand", "Mobile Suit Gundam: Iron-Blooded Orphans"],
+      "acceptable_top_10": ["Legend of the Galactic Heroes: Die Neue These", "Mobile Suit Gundam Thunderbolt", "Vinland Saga", "Kingdom", "Fullmetal Alchemist: Brotherhood", "Attack on Titan", "Berserk"],
+      "must_not_appear": [],
+      "confidence": "high",
+      "notes": "User's canonical anchor query — regression target. Live journal run returned 86 Eighty-Six at top (92% match), Mobile Suit Gundam Thunderbolt in top 5. Ideal set reflects that plus other strong candidates I'd expect.",
+      "observations": [
+      { "date": "2026-08-28", "note": "I would have put either Mobile Suit Gundam Thunderbolt or Vinland Saga in the top three instead of Legend of the Galactic Heroes. Also, including Full Metal Panic! in the ideal top 10 was not an ideal choice, but not entirely incorrect." }]
+    },
+
+    { "id": "vibe-personal-growth-slice-of-life",
+      "query": "personal growth slice of life",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "vibe-anchor",
+      "source": "user-remembered",
+      "ideal_top_3": ["March Comes In Like a Lion", "A Silent Voice", "Barakamon"],
+      "acceptable_top_10": ["Hyouka", "Honey and Clover", "Welcome to the N.H.K.", "Fruits Basket 1st Season", "Your Lie in April"],
+      "must_not_appear": [],
+      "confidence": "high",
+      "notes": "User's second canonical anchor query. Ideal set spans introspective + character-driven slice-of-life with explicit growth arcs.",
+      "observations": [
+      { "date": "2026-08-28", "note": "Good choices." }]
+    },
+
+    { "id": "vibe-cozy-slice-of-life",
+      "query": "cozy slice of life",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "vibe-anchor",
+      "source": "journal-2026-08 (worked well, 14 results — probe-flagged but well-tested)",
+      "ideal_top_3": ["Non Non Biyori", "Laid-Back Camp", "Flying Witch"],
+      "acceptable_top_10": ["K-On!", "Aria the Animation", "Yokohama Kaidashi Kikou: Quiet Country Cafe", "Natsume's Book of Friends", "Kamichu!"],
+      "must_not_appear": [],
+      "confidence": "high",
+      "notes": "Cozy is a well-defined vibe with clear canonical candidates. Live probe returned Non Non Biyori and Laid-Back Camp at top.",
+      "observations": [
+      { "date": "2026-08-28", "note": "Good choices." }]
+    },
+
+    { "id": "vibe-mysterious-deep-heavy-themes",
+      "query": "mysterious and deep animes with heavy themes and complex characters",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "vibe-anchor",
+      "source": "journal-2026-08 (real user query)",
+      "ideal_top_3": ["Monster", "Steins;Gate", "Psycho-Pass"],
+      "acceptable_top_10": ["Death Note", "Mushishi", "Serial Experiments Lain", "Ergo Proxy", "From the New World", "Puella Magi Madoka Magica"],
+      "must_not_appear": [],
+      "confidence": "medium",
+      "notes": "Long-form natural-language query — the type of thing that showcases the engine's differentiator vs pair-matching competitors. Wide acceptable set because 'mysterious + deep' spans multiple sub-genres.",
+      "observations": [
+      { "date": "2026-08-28", "note": "Mononoke was an interesting choice, but not entirely incorrect." }]
+    },
+
+    { "id": "vibe-dystopian-thriller",
+      "query": "dystopian thriller",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "vibe-anchor",
+      "source": "anchor-test",
+      "ideal_top_3": ["Psycho-Pass", "Ergo Proxy", "From the New World"],
+      "acceptable_top_10": ["Death Note", "Ghost in the Shell: Stand Alone Complex", "Serial Experiments Lain", "Texhnolyze", "No.6"],
+      "must_not_appear": [],
+      "confidence": "high",
+      "notes": "Clean vibe anchor with canonical candidates. Good regression target.",
+      "observations": [
+      { "date": "2026-08-28", "note": "Good choices." }]
+    },
+
+    { "id": "vibe-wholesome-found-family",
+      "query": "wholesome found family",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "vibe-anchor",
+      "source": "anchor-test",
+      "ideal_top_3": ["Spy x Family", "Fruits Basket 1st Season", "Barakamon"],
+      "acceptable_top_10": ["Usagi Drop", "Sweetness & Lightning", "Poco's Udon World", "Wolf Children", "March Comes In Like a Lion"],
+      "must_not_appear": [],
+      "confidence": "high",
+      "notes": "Increasingly common vibe query in the anime discourse. Should hit clean candidates. If Spy x Family doesn't appear in top-3, something's wrong.",
+      "observations": [
+      { "date": "2026-08-28", "note": "Good choices." }]
+    },
+
+    {
+      "id": "vibe-top-sports-anime-2023",
+      "query": "top sports anime from 2023",
+      "mode": "find_a_show",
+      "filters": { "lens": "Objective Rankings", "era": "2020s", "rating_max": null },
+      "category": "vibe-anchor",
+      "ideal_top_3": ["Tsurune - The Linking Shot -", "Uma Musume: Pretty Derby - Road to the Top", "Umamusume: Pretty Derby Season 3"],
+      "acceptable_top_10": ["Birdie Wing: Golf Girls' Story Season 2", "\"Ippon\" again!", "MIX Season 2"],
+      "must_not_appear": [],
+      "confidence": "high",
+      "notes": "OR mode is deterministic — bypasses the reranker, sorts by quality_score with era filter as SQL predicate. Ground truth is derivable from the DB directly."
+    },
+
+    { "id": "vibe-underrated-shounen-world-building",
+      "query": "underrated shounen with strong world-building",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "vibe-anchor",
+      "source": "anchor-test (hidden-gems adjacent)",
+      "ideal_top_3": ["Made in Abyss", "The Promised Neverland", "Dr. Stone"],
+      "acceptable_top_10": ["The Ancient Magus' Bride", "Kemono no Souja Erin", "Log Horizon", "Now and Then, Here and There"],
+      "must_not_appear": ["Naruto", "My Hero Academia", "Bleach"],
+      "confidence": "low",
+      "notes": "Tests whether 'underrted' modifier steers away from the top-N most-scored shows. must_not_appear guards against surfacing the exact shows the query is defined AGAINST.",
+      "observations": [
+      { "date": "2026-08-28", "note": "Taken as a whole, only Kemono no Souja Erin would be considered to meet the query. The rest are fairly highly rated and well-known." }]
+    },
+
+    { "id": "empty-fan-service-2000s",
+      "query": "Fan-service heavy shows",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "2000s", "rating_max": null },
+      "category": "known-failure",
+      "source": "journal-2026-07 (returned empty)",
+      "ideal_top_3": ["High School DxD", "To LOVE-Ru", "Sekirei"],
+      "acceptable_top_10": ["Highschool of the Dead", "Rosario + Vampire", "Ladies versus Butlers!", "Ikki Tousen: Battle Vixens"],
+      "must_not_appear": [],
+      "confidence": "high",
+      "notes": "Returned empty in journal. My ideal_top_3 is a domain guess — please correct if wrong. Testing: can the engine retrieve on tag-style positive queries where the content dimension is a common consensus_json topic? R-rated content is expected.",
+      "observations": [
+        {"date": "2026-08-28", "note": "These are mostly correct. I would have swapped Ikki Tousen with Girls Bravo."}
+      ]
+    },
+
+    { "id": "empty-fan-service-2010s",
+      "query": "Shows heavy on fan service",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "2010s", "rating_max": null },
+      "category": "known-failure",
+      "source": "journal-2026-07 (returned empty)",
+      "ideal_top_3": ["High School DxD", "Prison School", "SHIMONETA: A Boring World Where the Concept of Dirty Jokes Doesn't Exist"],
+      "acceptable_top_10": ["Keijo!!!!!!!!", "Monster Musume: Everyday Life with Monster Girls", "To LOVE-Ru Darkness", "Panty & Stocking with Garterbelt"],
+      "must_not_appear": [],
+      "confidence": "medium",
+      "notes": "Variant of the fan-service query with a different decade filter. Testing whether decade shift changes retrieval behavior.",
+      "observations": [
+        {"date": "2026-08-28", "note": "Great choices."}
+      ]
+    },
+
+    { "id": "empty-fan-service-main-series",
+      "query": "Main series with lots of fan service",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "2000s", "rating_max": null },
+      "category": "known-failure",
+      "source": "journal-2026-07 (returned empty)",
+      "ideal_top_3": ["High School DxD", "To LOVE-Ru", "Sekirei"],
+      "acceptable_top_10": ["Highschool of the Dead", "Rosario + Vampire", "Freezing"],
+      "must_not_appear": [],
+      "confidence": "high",
+      "notes": "Third fan-service variant. 'Main series' modifier probably meant to filter out OVAs/specials — subtype-aware filtering could help here (PR #80 groundwork).",
+      "observations": [
+        {"date": "2026-08-28", "note": "Great choices."}
+      ]
+    },
+
+    { "id": "empty-heavy-fan-service",
+      "query": "Heavy fan service",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "2010s", "rating_max": null },
+      "category": "known-failure",
+      "source": "journal-2026-07 (returned empty)",
+      "ideal_top_3": ["High School DxD", "Prison School", "Keijo!!!!!!!!"],
+      "acceptable_top_10": ["SHIMONETA: A Boring World Where the Concept of Dirty Jokes Doesn't Exist", "Monster Musume: Everyday Life with Monster Girls", "To LOVE-Ru Darkness"],
+      "must_not_appear": [],
+      "confidence": "high",
+      "notes": "Terse variant of the fan-service pattern. Testing whether query length affects retrieval — 'heavy fan service' is 3 words, previous variants were longer.",
+      "observations": [
+        {"date": "2026-08-28", "note": "Great choices."}
+      ]
+    },
+
+    { "id": "empty-ecchi-hot",
+      "query": "ecchi hot",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "known-failure",
+      "source": "journal-2026-07 (returned empty)",
+      "ideal_top_3": ["High School DxD", "To LOVE-Ru", "Prison School"],
+      "acceptable_top_10": ["Ikki Tousen: Battle Vixens", "Sekirei", "Freezing"],
+      "must_not_appear": [],
+      "confidence": "high",
+      "notes": "Very terse 2-word query using genre-vocabulary. Confidence low because 'hot' is ambiguous. Included as a class-of-failure test rather than a precision target.",
+      "observations": [
+        {"date": "2026-08-28", "note": "Great choices"}
+      ]
+    },
+
+    { "id": "empty-vague-dark",
+      "query": "Dark",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "known-failure",
+      "source": "journal-2026-07 (returned empty, ×2)",
+      "ideal_top_3": [],
+      "acceptable_top_10": ["Berserk", "Ergo Proxy", "Devilman: Crybaby", "Serial Experiments Lain", "Made in Abyss"],
+      "must_not_appear": ["K-ON!", "Non Non Biyori", "Nichijou - My Ordinary Life"],
+      "confidence": "high",
+      "notes": "Vague one-word query 'Dark'. Pre-COA-B this entry tested 'engine correctly returns empty' — that was implicitly testing the safety-block-produces-empty path. Post-COA-B, composite fallback returns 8-15 semantically-close candidates and the low_confidence banner fires (surfaces as [low_conf] in the eval console output). Reshape: coverage-only guard against retrieval nonsense. acceptable_top_10 lists canonical dark anime a competent semantic engine should surface for a one-word 'Dark' query; must_not_appear lists obvious anti-thematic shows (moe/SoL/comedy) whose appearance would indicate popularity bias overriding thematic matching. Zero coverage is not a hard failure (the space of 'dark' anime is wide), but zero-plus-violations is. Banner-fires signal is captured in engine_meta.low_confidence per record; grade manually via console output or a follow-on eval-runner extension.",
+      "observations": [
+        {"date": "2026-08-28", "note": "Safeguards did their job."},
+        {"date": "2026-09-06", "note": "Reshaped from correctly_empty to coverage-only after COA B / PR #102 shipped the composite-fallback path. See notes."}
+      ]
+    },
+
+    { "id": "franchise-fma-brotherhood",
+      "query": "Fullmetal Alchemist: Brotherhood",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "franchise-title",
+      "source": "journal-2026-07 (real user misuse) + our local test",
+      "ideal_top_3": ["Fullmetal Alchemist: Brotherhood", "Fullmetal Alchemist", "Vinland Saga"],
+      "acceptable_top_10": ["Attack on Titan", "Hunter x Hunter (2011)", "Made in Abyss", "Berserk", "Demon Slayer: Kimetsu no Yaiba"],
+      "must_not_appear": [],
+      "confidence": "medium",
+      "notes": "COA A ships the yellow hint offering Encyclopedia lookup — but the engine should ALSO return the show itself + thematic siblings so users who ignore the hint still get value. Live test 2026-08-26 returned FMA:B at top (98% match). Regression anchor for the title-lookup pattern.",
+      "observations": [
+        {"date": "2026-08-28", "note": "Probably would not have included Made in Abyss in the acceptable top 10. "}
+      ]
+    },
+
+    { "id": "franchise-cowboy-bebop",
+      "query": "Cowboy Bebop",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "franchise-title",
+      "source": "our local test 2026-08-26",
+      "ideal_top_3": ["Cowboy Bebop", "Samurai Champloo", "Outlaw Star"],
+      "acceptable_top_10": ["Space Dandy", "Lupin the Third Part 4", "Michiko & Hatchin", "Trigun", "Baccano!"],
+      "must_not_appear": ["Cowboy Bebop: The Movie"],
+      "confidence": "high",
+      "notes": "Live test 2026-08-26 returned Cowboy Bebop at top with Outlaw Star + Samurai Champloo close behind — clean franchise-root behavior. must_not_appear guards against the movie leaking (should be collapsed by series consolidation per PR #77).",
+      "observations": [
+        {"date": "2026-08-28", "note": "All good matches."}
+      ]
+    },
+
+    { "id": "franchise-steins-gate",
+      "query": "Steins;Gate",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "franchise-title",
+      "source": "anchor-test",
+      "ideal_top_3": ["Steins;Gate", "Steins;Gate 0", "Erased"],
+      "acceptable_top_10": ["The Melancholy of Haruhi Suzumiya", "ChäoS;HEAd", "Robotics;Notes", "Occultic;Nine", "The Tatami Galaxy"],
+      "must_not_appear": [],
+      "confidence": "high",
+      "notes": "Anchor-test for a canonically well-loved show. Ideal includes S;G 0 (sequel) and Erased (closest thematic sibling — time manipulation + emotional stakes).",
+      "observations": [
+        {"date": "2026-08-28", "note": "All good matches."}
+      ]
+    },
+
+    { "id": "franchise-bleach-tybw",
+      "query": "Bleach: Thousand-Year Blood War",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "franchise-title",
+      "source": "journal-2026-08 (real user query)",
+      "ideal_top_3": ["Bleach: Thousand-Year Blood War", "Bleach", "Jujutsu Kaisen"],
+      "acceptable_top_10": ["Demon Slayer: Kimetsu no Yaiba", "Chainsaw Man", "Hunter x Hunter (2011)", "Attack on Titan"],
+      "must_not_appear": [],
+      "confidence": "high",
+      "notes": "Real journal query. Recent shonen arc + expected shonen brethren. Confidence high because the vault definitely contains all of these.",
+      "observations": [
+        {"date": "2026-08-28", "note": "All good matches."}
+      ]
+    },
+
+    { "id": "franchise-kaguya-sama-ultra-romantic",
+      "query": "Kaguya-sama: Love is War?",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "franchise-title",
+      "source": "journal-2026-08 (real user query)",
+      "ideal_top_3": ["Kaguya-sama: Love is War", "Kaguya-sama: Love is War?", "Ouran High School Host Club"],
+      "acceptable_top_10": ["My Dress-Up Darling", "Toradora!", "Rascal Does Not Dream of Bunny Girl Senpai", "Nisekoi"],
+      "must_not_appear": [],
+      "confidence": "high",
+      "notes": "Note the '?' in the query is the actual title punctuation for season 2 — good test for punctuation normalization. Ideal_top_3 includes both S1 (no ?) and S2 (with ?).",
+      "observations": [
+        {"date": "2026-08-28", "note": "Great matches and good callout on the question mark."}
+      ]
+    },
+
+    { "id": "slt-eva-madoka",
+      "query": null,
+      "mode": "shows_like_this",
+      "filters": { "lens": null, "era": null, "rating_max": null },
+      "reference_titles": ["Neon Genesis Evangelion", "Puella Magi Madoka Magica"],
+      "negative_anchors": [],
+      "category": "slt-anchor",
+      "source": "journal-2026-07 (returned empty — surprising failure)",
+      "ideal_top_3": ["Serial Experiments Lain", "Boogiepop Phantom", "Paranoia Agent"],
+      "acceptable_top_10": ["Ergo Proxy", "Texhnolyze", "Flip Flappers", "Mawaru Penguindrum", "From the New World"],
+      "must_not_appear": [],
+      "confidence": "high",
+      "notes": "Two canonical psychological anime with obvious thematic overlap (deconstruction, mental-health themes, unreliable narrator, dark reveals) returned EMPTY in the journal. LOAD-BEARING SLT test — if this fails, SLT mode is broken for its most obvious use case.",
+      "observations": [
+        {"date": "2026-08-28", "note": "Good choices."}
+      ]
+    },
+
+    { "id": "slt-aot-kingdom",
+      "query": null,
+      "mode": "shows_like_this",
+      "filters": { "lens": null, "era": null, "rating_max": null },
+      "reference_titles": ["Attack on Titan", "Kingdom"],
+      "negative_anchors": [],
+      "category": "slt-anchor",
+      "source": "anchor-test",
+      "ideal_top_3": ["Vinland Saga", "Claymore", "Berserk"],
+      "acceptable_top_10": ["Legend of the Galactic Heroes: Die Neue These", "86 Eighty-Six", "Fate/Zero", "Kabaneri of the Iron Fortress", "Drifters"],
+      "must_not_appear": ["Attack on Titan Season 2", "Attack on Titan Season 3", "Kingdom 2nd Season"],
+      "confidence": "high",
+      "notes": "Two shows with strong war/tactics/violence overlap. must_not_appear tests series-collapse (should NOT leak siblings of the anchors themselves).",
+      "observations": [
+        {"date": "2026-08-28", "note": "I would argue that 86 should not have been included in the top 3 based on the fact that it deals with more modern warfare. Instead, Claymore or Drifters would have been more appropriate. Further, based on the show's tone, Sengoku Basara should not have been in the acceptable top 10 because it is a little too light-hearted for AoT or Kingdom."}
+      ]
+    },
+
+    { "id": "slt-steins-psycho",
+      "query": null,
+      "mode": "shows_like_this",
+      "filters": { "lens": null, "era": null, "rating_max": null },
+      "reference_titles": ["Steins;Gate", "Psycho-Pass"],
+      "negative_anchors": [],
+      "category": "slt-anchor",
+      "source": "our probe 2026-08-24 (returned empty with low_confidence flag)",
+      "ideal_top_3": ["Ergo Proxy", "Ghost in the Shell: Stand Alone Complex", "Serial Experiments Lain"],
+      "acceptable_top_10": ["From the New World", "Death Note", "Erased", "Monster", "Paranoia Agent"],
+      "must_not_appear": ["Steins;Gate 0", "Psycho-Pass 2", "Psycho-Pass 3"],
+      "confidence": "high",
+      "notes": "Ran this exact query as a query_probe.py test during PR #97 verification — returned EMPTY with low_confidence flag. Two shows with strong sci-fi thriller overlap. Failure was surprising. Investigation target for COA B.",
+      "observations": [
+        {"date": "2026-08-28", "note": "Good choices."},
+        {"date": "2026-09-06", "note": "5-run probe post-COA-B. Distribution: n=13/14/15/13/15 (min 13, max 15, always non-empty). 1/5 runs safety-blocked → composite fallback fired cleanly with lc=True/fb='composite' in 9.1s (vs 17-20s for non-blocked runs). The pre-COA-B 08-30 empty pool + 5.34s elapsed fingerprint was a safety-blocked run before the composite fallback path existed. Plan hypothesis ('rerank-cuts-all, not safety-block') was wrong; the mechanism IS PROHIBITED_CONTENT and COA B already handles it. Also observed: none of the current ideal_top_3 (Ergo Proxy / GITS:SAC / Lain) surface in top-5 across the 5 runs; reranker consistently prefers ID:INVADED / From the New World / Death Note / Pluto / Terror in Resonance. That's a separate reranker-quality question about which sci-fi/psych canon this pair anchors to; the intermittence question is closed."}
+      ]
+    },
+
+    { "id": "slt-frieren-mushishi",
+      "query": null,
+      "mode": "shows_like_this",
+      "filters": { "lens": null, "era": null, "rating_max": null },
+      "reference_titles": ["Frieren: Beyond Journey's End", "Mushishi"],
+      "negative_anchors": [],
+      "category": "slt-anchor",
+      "source": "anchor-test",
+      "ideal_top_3": ["Natsume's Book of Friends", "Wandering Witch: The Journey of Elaina", "Kino's Journey"],
+      "acceptable_top_10": ["The Ancient Magus' Bride", "Violet Evergarden", "Girls' Last Tour", "Sound of the Sky"],
+      "must_not_appear": [],
+      "confidence": "medium",
+      "notes": "Two contemplative, episodic, atmospheric shows — testing whether SLT captures 'quiet mood' as a shared DNA dimension rather than surface plot elements.",
+      "observations": [
+        {"date": "2026-08-28", "note": "I would leave March Comes In Like a Lion from the Top 10 and replaced Mononoke with Wandering Witch: Journey of Elaina."}
+      ]
+    },
+
+    { "id": "hidden-quiet-contemplative-visuals",
+      "query": "quiet, contemplative anime with beautiful visuals",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "hidden-gems",
+      "source": "anchor-test (COA C context)",
+      "ideal_top_3": ["Mushishi", "Girls' Last Tour", "Kino's Journey"],
+      "acceptable_top_10": ["Sound of the Sky", "Yokohama Kaidashi Kikou: Quiet Country Cafe", "Aria the Animation", "Haibane Renmei", "Mononoke"],
+      "must_not_appear": ["Attack on Titan", "Demon Slayer: Kimetsu no Yaiba", "Jujutsu Kaisen"],
+      "confidence": "high",
+      "notes": "Direct challenge to the popularity bias. must_not_appear names the top mainstream shows — if any surface here, the reranker is over-weighting popularity vs vibe fit.",
+      "observations": [
+        {"date": "2026-08-28", "note": "Good choices."}
+      ]
+    },
+
+    { "id": "hidden-experimental-unconventional",
+      "query": "experimental animation with unconventional storytelling",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "hidden-gems",
+      "source": "anchor-test (COA C context)",
+      "ideal_top_3": ["Kaiba", "The Tatami Galaxy", "Mind Game"],
+      "acceptable_top_10": ["Cat Soup", "FLCL", "Serial Experiments Lain", "Flip Flappers", "Kemonozume"],
+      "must_not_appear": [],
+      "confidence": "medium",
+      "notes": "Very obscure-shows-focused query. Tests whether the reranker can identify 'experimental' as a positive signal or defaults to well-documented shows.",
+      "observations": [
+        {"date": "2026-08-28", "note": "Very important: I do not see Angel's Egg in the encyclopedia. I would have included Flip Flappers in the acceptable top 10."}
+      ]
+    },
+
+    { "id": "hidden-short-philosophical",
+      "query": "short-form series with philosophical depth",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "All", "rating_max": null },
+      "category": "hidden-gems",
+      "source": "anchor-test (COA C context)",
+      "ideal_top_3": ["Kino's Journey", "Girls' Last Tour", "Yokohama Kaidashi Kikou: Quiet Country Cafe"],
+      "acceptable_top_10": ["Haibane Renmei", "Serial Experiments Lain", "Sound of the Sky", "Boogiepop Phantom", "Texhnolyze"],
+      "must_not_appear": [],
+      "confidence": "medium",
+      "notes": "Two-modifier query: 'short-form' (episode/run length signal) + 'philosophical depth' (content signal). Tests whether the engine handles compound qualifier queries.",
+      "observations": [
+        {"date": "2026-08-28", "note": "Good choices."}
+      ]
+    },
+
+    { "id": "hidden-90s-mature-tv",
+      "query": "90s TV series with mature themes",
+      "mode": "find_a_show",
+      "filters": { "lens": "Intelligent Search", "era": "1990s", "rating_max": null },
+      "category": "hidden-gems",
+      "source": "anchor-test (recency-bias challenge)",
+      "ideal_top_3": ["Berserk", "Neon Genesis Evangelion", "Serial Experiments Lain"],
+      "acceptable_top_10": ["The Vision of Escaflowne", "Rurouni Kenshin", "Cowboy Bebop", "Revolutionary Girl Utena", "Vampire Hunter D: Bloodlust"],
+      "must_not_appear": [],
+      "confidence": "high",
+      "notes": "Direct challenge to the recency-bias finding — with an explicit era filter that forces the engine into the 90s, do we surface strong 90s content or does the engine still favor recent-looking-titles-in-the-90s? Note: 80s content may be sparse in the vault (2020 filter cutoff for our TV catalog).",
+      "observations": [
+        {"date": "2026-08-28", "note": "Very important: I do not see Angel's Egg in the encyclopedia. "},
+        {"date": "2026-09-06", "note": "Decade-filter enforcement bug root-caused and fixed. `_detect_studio` was capturing 'TV' from 'TV series' as a studio via Pattern 2, injecting `studio LIKE '%TV%'` into the SQL WHERE clause → zero rows → silent fallback to unfiltered path → 2005-2026 shows leaked through. Fix: added TV/OVA/ONA/movie/film/special to `_NON_STUDIO_TERMS`. Post-fix probe returns 15/15 shows in 1990-1999. Secondary discovery: only Berserk from the current ideal_top_3 has MAL's 'Seinen' genre tag — NGE/Lain/Cowboy Bebop/Utena use Avant Garde/Psychological/Drama instead (MAL taxonomy quirk: Seinen is a publishing demographic, narrower than 'thematically mature'). The 'mature themes' → seinen concept synonym plus Seinen genre filter narrows the pool aggressively. Consider revising ideal/acceptable to Berserk-heavy, or reshape query to remove the 'mature themes' constraint if we want NGE/Lain/Cowboy Bebop in the pool."}
+      ]
+    }
+  ]
+}

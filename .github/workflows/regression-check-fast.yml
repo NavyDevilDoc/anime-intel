@@ -1,0 +1,64 @@
+name: Engine Regression — Fast Tier
+
+# Runs a stratified 13-entry subset of the curated regression baseline
+# on every backend-affecting PR. Required to RUN, not required to PASS:
+# failures show in the run summary and as a non-blocking job result so
+# a reviewer can decide whether to investigate.
+#
+# Required secrets:
+#   GOOGLE_API_KEY — Gemini API key for the reranker and embeddings.
+#
+# Promote to merge-blocking once threshold tuning stabilizes
+# (Phase F follow-up in IMPLEMENTATION_PLAN.md).
+
+on:
+  pull_request:
+    paths:
+      - 'api/**'
+      - 'analysis/**'
+      - 'src/**'
+      - 'tests/data/regression_queries.json'
+      - 'tests/data/regression_baseline.json'
+      - 'tests/test_engine_regression.py'
+      - 'tools/build_regression_queries.py'
+      - 'tools/summarize_regression_report.py'
+      - 'requirements.txt'
+      - '.github/workflows/regression-check-fast.yml'
+
+jobs:
+  fast-tier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run fast-tier regression check
+        id: check
+        continue-on-error: true
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          TESTING: '1'
+        run: |
+          python tests/test_engine_regression.py --check-regression --subset 13
+
+      - name: Summarize report
+        if: always()
+        run: |
+          python tools/summarize_regression_report.py >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-check-report-fast
+          path: tests/data/regression_check_report.json
+          if-no-files-found: warn

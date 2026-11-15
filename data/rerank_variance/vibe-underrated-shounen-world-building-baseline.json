@@ -1,0 +1,178 @@
+{
+  "captured_at": "2026-09-20T04:49:37+00:00",
+  "entry_id": "vibe-underrated-shounen-world-building",
+  "mode": "find_a_show",
+  "query": "underrated shounen with strong world-building",
+  "reference_titles": null,
+  "n_runs": 5,
+  "label": "baseline",
+  "runs": [
+    {
+      "pool_size": 6,
+      "top_1_title": "Sengoku Youko 2nd Season",
+      "top_1_confidence": 91,
+      "top_3_titles": [
+        "Sengoku Youko 2nd Season",
+        "Dragon Quest: The Adventure of Dai",
+        "Mobile Suit Gundam: The Origin"
+      ],
+      "top_5_titles": [
+        "Sengoku Youko 2nd Season",
+        "Dragon Quest: The Adventure of Dai",
+        "Mobile Suit Gundam: The Origin",
+        "Altair: A Record of Battles",
+        "Toward the Terra (TV)"
+      ],
+      "top_10_titles": [
+        "Sengoku Youko 2nd Season",
+        "Dragon Quest: The Adventure of Dai",
+        "Mobile Suit Gundam: The Origin",
+        "Altair: A Record of Battles",
+        "Toward the Terra (TV)",
+        "Broken Blade 3"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 9.13
+    },
+    {
+      "pool_size": 7,
+      "top_1_title": "Sengoku Youko 2nd Season",
+      "top_1_confidence": 92,
+      "top_3_titles": [
+        "Sengoku Youko 2nd Season",
+        "Mobile Suit Gundam: The Origin",
+        "Altair: A Record of Battles"
+      ],
+      "top_5_titles": [
+        "Sengoku Youko 2nd Season",
+        "Mobile Suit Gundam: The Origin",
+        "Altair: A Record of Battles",
+        "Dragon Quest: The Adventure of Dai",
+        "Toward the Terra (TV)"
+      ],
+      "top_10_titles": [
+        "Sengoku Youko 2nd Season",
+        "Mobile Suit Gundam: The Origin",
+        "Altair: A Record of Battles",
+        "Dragon Quest: The Adventure of Dai",
+        "Toward the Terra (TV)",
+        "Broken Blade 3",
+        "The First Slam Dunk"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 7.65
+    },
+    {
+      "pool_size": 6,
+      "top_1_title": "Sengoku Youko 2nd Season",
+      "top_1_confidence": 92,
+      "top_3_titles": [
+        "Sengoku Youko 2nd Season",
+        "Dragon Quest: The Adventure of Dai",
+        "Altair: A Record of Battles"
+      ],
+      "top_5_titles": [
+        "Sengoku Youko 2nd Season",
+        "Dragon Quest: The Adventure of Dai",
+        "Altair: A Record of Battles",
+        "Mobile Suit Gundam: The Origin",
+        "Broken Blade 3"
+      ],
+      "top_10_titles": [
+        "Sengoku Youko 2nd Season",
+        "Dragon Quest: The Adventure of Dai",
+        "Altair: A Record of Battles",
+        "Mobile Suit Gundam: The Origin",
+        "Broken Blade 3",
+        "Toward the Terra (TV)"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 8.39
+    },
+    {
+      "pool_size": 5,
+      "top_1_title": "Sengoku Youko 2nd Season",
+      "top_1_confidence": 88,
+      "top_3_titles": [
+        "Sengoku Youko 2nd Season",
+        "Dragon Quest: The Adventure of Dai",
+        "Mobile Suit Gundam: The Origin"
+      ],
+      "top_5_titles": [
+        "Sengoku Youko 2nd Season",
+        "Dragon Quest: The Adventure of Dai",
+        "Mobile Suit Gundam: The Origin",
+        "Toward the Terra (TV)",
+        "Altair: A Record of Battles"
+      ],
+      "top_10_titles": [
+        "Sengoku Youko 2nd Season",
+        "Dragon Quest: The Adventure of Dai",
+        "Mobile Suit Gundam: The Origin",
+        "Toward the Terra (TV)",
+        "Altair: A Record of Battles"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 7.98
+    },
+    {
+      "pool_size": 7,
+      "top_1_title": "Sengoku Youko 2nd Season",
+      "top_1_confidence": 92,
+      "top_3_titles": [
+        "Sengoku Youko 2nd Season",
+        "Dragon Quest: The Adventure of Dai",
+        "Mobile Suit Gundam: The Origin"
+      ],
+      "top_5_titles": [
+        "Sengoku Youko 2nd Season",
+        "Dragon Quest: The Adventure of Dai",
+        "Mobile Suit Gundam: The Origin",
+        "Altair: A Record of Battles",
+        "Toward the Terra (TV)"
+      ],
+      "top_10_titles": [
+        "Sengoku Youko 2nd Season",
+        "Dragon Quest: The Adventure of Dai",
+        "Mobile Suit Gundam: The Origin",
+        "Altair: A Record of Battles",
+        "Toward the Terra (TV)",
+        "Broken Blade 3",
+        "Doraemon: Nobita and the Steel Troops - The New Age"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 8.72
+    }
+  ],
+  "summary": {
+    "pool_size": {
+      "min": 5,
+      "max": 7,
+      "mean": 6.2,
+      "stdev": 0.84
+    },
+    "pool_collapse_count": 0,
+    "banner_fire_count": 0,
+    "top_3_jaccard_mean": 0.65,
+    "top_5_jaccard_mean": 0.867,
+    "top_1_confidence": {
+      "min": 88,
+      "max": 92,
+      "range": 4,
+      "mean": 91,
+      "stdev": 1.73
+    },
+    "elapsed_s_total": 41.87,
+    "elapsed_s_mean": 8.37
+  }
+}

@@ -1,0 +1,222 @@
+name: Monthly Hype Predictor Retrain + Health Report
+
+# Runs on the 1st of each month at 06:00 UTC. Retrains the HypePredictor
+# on the current vault, applies a drift gate against the committed
+# model's test MAE, and regenerates the health report.
+#
+# Drift gate (new.test_mae vs committed.test_mae, as a fraction):
+#     |new - old| / old <= 0.20  -> commit the new model
+#     |new - old| / old  > 0.20  -> DO NOT commit; open an issue; still
+#                                   regen the report with a warning
+#
+# The 20% threshold mirrors the warning/alert thresholds the health
+# report uses on rolling MAE. If retrain-time MAE drifts >20% from the
+# baseline, something non-trivial changed in the vault (new source
+# categories dominating, staff cascade gaps, etc.) and silently
+# swapping the production model would mask the signal.
+#
+# Opens an auto-PR with the diff so a human reviews whether to merge
+# the new model + report. Low review burden on healthy months; the
+# model file is ~100KB and the report is skimmable in a minute.
+
+on:
+  schedule:
+    - cron: '0 6 1 * *'
+  workflow_dispatch:
+    inputs:
+      force_commit:
+        description: 'Commit new model even if drift >20% (bypasses drift gate)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Retrain + drift gate
+        id: retrain
+        run: |
+          python <<'PYTHON'
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, '.')
+          from analysis.hype_predictor import MODELS_DIR, HypePredictor
+
+          # Load committed baseline
+          try:
+              old = HypePredictor.load_latest()
+              old_mae = old.metadata.test_mae
+              old_version = old.metadata.model_version
+          except FileNotFoundError:
+              old_mae = None
+              old_version = None
+
+          # Train new
+          new = HypePredictor.train()
+          new_mae = new.metadata.test_mae
+          new_version = new.metadata.model_version
+
+          # Drift gate
+          force = ${{ github.event.inputs.force_commit == 'true' && 'True' || 'False' }}
+          drift_frac = 0.0
+          commit_new = True
+          drift_alert = False
+          if old_mae is not None:
+              drift_frac = abs(new_mae - old_mae) / old_mae
+              if drift_frac > 0.20 and not force:
+                  commit_new = False
+                  drift_alert = True
+
+          # Save (or skip)
+          if commit_new:
+              paths = new.save()
+              print(f"Committed new model: {paths['model'].name}")
+          else:
+              print(f"DRIFT GATE: not committing new model "
+                    f"(drift {drift_frac*100:.1f}% > 20%)")
+
+          # Emit for the next step
+          out = {
+              "new_version": new_version,
+              "new_mae": round(new_mae, 4),
+              "old_version": old_version,
+              "old_mae": round(old_mae, 4) if old_mae is not None else None,
+              "drift_frac": round(drift_frac, 4),
+              "committed_new": commit_new,
+              "drift_alert": drift_alert,
+          }
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"result={json.dumps(out)}\n")
+          print(json.dumps(out, indent=2))
+          PYTHON
+
+      - name: Regenerate health report
+        run: python tools/report_prediction_health.py
+
+      - name: Prune older model files (keep latest only)
+        if: fromJSON(steps.retrain.outputs.result).committed_new == true
+        run: |
+          cd data/models
+          # Keep the newest hype_predictor_*.joblib + its sidecar; delete others.
+          # Filename sort by version tag puts the newest last since the date
+          # segment is YYYYMMDD.
+          latest=$(ls hype_predictor_*.joblib | sort | tail -1)
+          latest_stem="${latest%.joblib}"
+          echo "Keeping: $latest_stem.{joblib,json}"
+          for f in hype_predictor_*.joblib hype_predictor_*.json; do
+            case "$f" in
+              "$latest_stem.joblib"|"$latest_stem.json") ;;
+              *) echo "Removing: $f"; rm -f "$f" ;;
+            esac
+          done
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet data/models/ data/hype_predictor_health/; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No changes to commit."
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit + push + PR
+        if: steps.changes.outputs.changed == 'true'
+        id: commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          BRANCH="hype-model/monthly-${TIMESTAMP}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add data/models/ data/hype_predictor_health/
+          git commit -m "Monthly hype-predictor retrain + health report: $(date +%Y-%m-%d)
+
+          Automated monthly cycle. See data/hype_predictor_health/README.md for status.
+
+          Co-Authored-By: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+          git push origin "$BRANCH"
+
+          RESULT='${{ steps.retrain.outputs.result }}'
+          DRIFT_ALERT=$(echo "$RESULT" | python -c "import json,sys;print('true' if json.load(sys.stdin)['drift_alert'] else 'false')")
+          if [ "$DRIFT_ALERT" = "true" ]; then
+            TITLE="[DRIFT ALERT] Monthly hype retrain $(date +%Y-%m-%d)"
+          else
+            TITLE="Monthly hype retrain $(date +%Y-%m-%d)"
+          fi
+
+          gh pr create \
+            --title "$TITLE" \
+            --body "## Monthly hype-predictor cycle
+
+          $(cat <<BODY
+          Automated monthly retrain + health-report regeneration.
+
+          **Retrain result:**
+          \`\`\`json
+          ${{ steps.retrain.outputs.result }}
+          \`\`\`
+
+          **Health report:** see \`data/hype_predictor_health/README.md\` in the diff.
+
+          ### Review checklist
+          - [ ] Report status is \`healthy\` (or drift alert is understood)
+          - [ ] Rolling MAE within trained model's reasonable band
+          - [ ] If a new model was committed, old model file was removed
+          - [ ] Merge when satisfied
+          BODY
+          )" \
+            --head "$BRANCH" \
+            --base main
+
+      - name: Open drift-alert issue
+        if: fromJSON(steps.retrain.outputs.result).drift_alert == true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RESULT='${{ steps.retrain.outputs.result }}'
+          gh issue create \
+            --title "Hype predictor drift alert: $(date +%Y-%m-%d)" \
+            --label "drift-alert" \
+            --body "The monthly retrain detected >20% drift between the committed model's test MAE and the newly-trained model's test MAE.
+
+          Retrain output:
+          \`\`\`json
+          $RESULT
+          \`\`\`
+
+          The new model was NOT committed. The committed baseline model is still in use for weekly predictions.
+
+          Diagnose:
+          1. Check the health report (\`data/hype_predictor_health/README.md\`) for rolling-MAE drift context
+          2. Compare feature coefficients between the committed metadata and a probe run of a fresh model
+          3. Investigate recent vault composition changes (new source categories, new large seasonal cohorts)
+          4. Decide whether to force-commit the new model (dispatch workflow with \`force_commit=true\`) or investigate further"

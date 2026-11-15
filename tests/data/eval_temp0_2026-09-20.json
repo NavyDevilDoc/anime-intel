@@ -1,0 +1,1333 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-09-20T04:59:58+00:00",
+  "eval_schema_version": 1,
+  "vault_row_count": 6338,
+  "n_queries_run": 27,
+  "overall": {
+    "n": 27,
+    "precision_at_3_mean": 0.30769230769230765,
+    "coverage_at_10_mean": 0.2518518518518518,
+    "must_not_appear_violations": 0,
+    "correctly_empty_hit": 0,
+    "correctly_empty_n": 0
+  },
+  "by_category": {
+    "vibe-anchor": {
+      "n": 8,
+      "precision_at_3_mean": 0.29166666666666663,
+      "coverage_at_10_mean": 0.32083333333333336,
+      "must_not_appear_violations": 0,
+      "correctly_empty_hit": 0,
+      "correctly_empty_n": 0
+    },
+    "known-failure": {
+      "n": 6,
+      "precision_at_3_mean": 0.13333333333333333,
+      "coverage_at_10_mean": 0.14603174603174604,
+      "must_not_appear_violations": 0,
+      "correctly_empty_hit": 0,
+      "correctly_empty_n": 0
+    },
+    "franchise-title": {
+      "n": 5,
+      "precision_at_3_mean": 0.4666666666666666,
+      "coverage_at_10_mean": 0.23214285714285715,
+      "must_not_appear_violations": 0,
+      "correctly_empty_hit": 0,
+      "correctly_empty_n": 0
+    },
+    "slt-anchor": {
+      "n": 4,
+      "precision_at_3_mean": 0.3333333333333333,
+      "coverage_at_10_mean": 0.39285714285714285,
+      "must_not_appear_violations": 0,
+      "correctly_empty_hit": 0,
+      "correctly_empty_n": 0
+    },
+    "hidden-gems": {
+      "n": 4,
+      "precision_at_3_mean": 0.3333333333333333,
+      "coverage_at_10_mean": 0.15625,
+      "must_not_appear_violations": 0,
+      "correctly_empty_hit": 0,
+      "correctly_empty_n": 0
+    }
+  },
+  "by_confidence": {
+    "high": {
+      "n": 20,
+      "precision_at_3_mean": 0.3333333333333333,
+      "coverage_at_10_mean": 0.2635119047619048,
+      "must_not_appear_violations": 0,
+      "correctly_empty_hit": 0,
+      "correctly_empty_n": 0
+    },
+    "medium": {
+      "n": 6,
+      "precision_at_3_mean": 0.2777777777777778,
+      "coverage_at_10_mean": 0.25496031746031744,
+      "must_not_appear_violations": 0,
+      "correctly_empty_hit": 0,
+      "correctly_empty_n": 0
+    },
+    "low": {
+      "n": 1,
+      "precision_at_3_mean": 0.0,
+      "coverage_at_10_mean": 0.0,
+      "must_not_appear_violations": 0,
+      "correctly_empty_hit": 0,
+      "correctly_empty_n": 0
+    }
+  },
+  "gemini_cost_actual": {
+    "total_usd": 0.166386,
+    "call_count": 57,
+    "total_input_tokens": 172811,
+    "total_output_tokens": 45828,
+    "by_model": {
+      "gemini-embedding-001": {
+        "calls": 27,
+        "usd": 2.8e-05,
+        "input_tokens": 182,
+        "output_tokens": 0
+      },
+      "gemini-2.5-flash": {
+        "calls": 30,
+        "usd": 0.166358,
+        "input_tokens": 172629,
+        "output_tokens": 45828
+      }
+    },
+    "by_origin": {
+      "probe": {
+        "calls": 57,
+        "usd": 0.166386
+      }
+    },
+    "window_start_utc": "2026-09-20T04:56:13.964937+00:00"
+  },
+  "per_query": [
+    {
+      "id": "vibe-gritty-military-drama",
+      "category": "vibe-anchor",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        41457,
+        31973,
+        56009,
+        33,
+        52976,
+        16498,
+        25781
+      ],
+      "returned_titles": [
+        "86 Eighty-Six",
+        "Mobile Suit Gundam Thunderbolt",
+        "Sentenced to Be a Hero",
+        "Berserk",
+        "Berserk: The Golden Age Arc - Memorial Edition",
+        "Attack on Titan",
+        "Attack on Titan: No Regrets"
+      ],
+      "elapsed_sec": 9.68,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 7,
+      "returned_top_3_hits": [
+        41457
+      ],
+      "returned_top_10_hits": [
+        33,
+        16498,
+        31973,
+        41457
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.3333333333333333,
+      "coverage_at_10": 0.4,
+      "correctly_empty": null
+    },
+    {
+      "id": "vibe-personal-growth-slice-of-life",
+      "category": "vibe-anchor",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        22789,
+        31646,
+        58788,
+        30015,
+        48779,
+        34494,
+        1126,
+        55194,
+        10162,
+        3297
+      ],
+      "returned_titles": [
+        "Barakamon",
+        "March Comes In Like a Lion",
+        "Journal with Witch",
+        "ReLIFE",
+        "Deaimon: Recipe for Happiness",
+        "Sakura Quest",
+        "Figure 17: Tsubasa & Hikaru",
+        "Tonbo!",
+        "Bunny Drop",
+        "Aria the Origination"
+      ],
+      "elapsed_sec": 7.17,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 10,
+      "returned_top_3_hits": [
+        22789,
+        31646
+      ],
+      "returned_top_10_hits": [
+        22789,
+        31646
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.6666666666666666,
+      "coverage_at_10": 0.25,
+      "correctly_empty": null
+    },
+    {
+      "id": "vibe-cozy-slice-of-life",
+      "category": "vibe-anchor",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        36094,
+        22789,
+        34798,
+        17549,
+        12815,
+        48779,
+        37033,
+        36513,
+        35241,
+        45425,
+        10162,
+        16417,
+        33241,
+        1524,
+        60071
+      ],
+      "returned_titles": [
+        "Hakumei and Mikochi",
+        "Barakamon",
+        "Laid-Back Camp",
+        "Non Non Biyori",
+        "Polar Bear Cafe",
+        "Deaimon: Recipe for Happiness",
+        "Today's Menu for the Emiya Family",
+        "Yotsuiro Biyori",
+        "Konohana Kitan",
+        "Slow Loop",
+        "Bunny Drop",
+        "Tamako Market",
+        "Honobono Log",
+        "Windy Tales",
+        "A Gentle Noble's Vacation Recommendation"
+      ],
+      "elapsed_sec": 7.36,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 15,
+      "returned_top_3_hits": [
+        34798
+      ],
+      "returned_top_10_hits": [
+        17549,
+        34798
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.3333333333333333,
+      "coverage_at_10": 0.25,
+      "correctly_empty": null
+    },
+    {
+      "id": "vibe-mysterious-deep-heavy-themes",
+      "category": "vibe-anchor",
+      "confidence": "medium",
+      "mode": "find_a_show",
+      "returned_ids": [
+        339,
+        790,
+        26,
+        387,
+        457,
+        10721,
+        4879,
+        52215,
+        2246,
+        455,
+        486,
+        49818
+      ],
+      "returned_titles": [
+        "Serial Experiments Lain",
+        "Ergo Proxy",
+        "Texhnolyze",
+        "Haibane Renmei",
+        "Mushi-Shi",
+        "Penguindrum",
+        "Box of Goblins",
+        "Orb: On the Movements of the Earth",
+        "Mononoke",
+        "Fantastic Children",
+        "Kino's Journey",
+        "Lord of Mysteries"
+      ],
+      "elapsed_sec": 8.51,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 12,
+      "returned_top_3_hits": [],
+      "returned_top_10_hits": [
+        339,
+        457,
+        790
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.0,
+      "coverage_at_10": 0.3333333333333333,
+      "correctly_empty": null
+    },
+    {
+      "id": "vibe-dystopian-thriller",
+      "category": "vibe-anchor",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        13601,
+        26,
+        34599,
+        30,
+        58883,
+        41433,
+        60489,
+        16009
+      ],
+      "returned_titles": [
+        "Psycho-Pass",
+        "Texhnolyze",
+        "Made in Abyss",
+        "Neon Genesis Evangelion",
+        "Dead Dead Demons Dededede Destruction",
+        "Akudama Drive",
+        "Takopi's Original Sin",
+        "Sunday Without God"
+      ],
+      "elapsed_sec": 11.67,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 8,
+      "returned_top_3_hits": [
+        13601
+      ],
+      "returned_top_10_hits": [
+        26,
+        13601
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.3333333333333333,
+      "coverage_at_10": 0.25,
+      "correctly_empty": null
+    },
+    {
+      "id": "vibe-wholesome-found-family",
+      "category": "vibe-anchor",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        10162,
+        49776,
+        32828,
+        49909,
+        35222,
+        55153,
+        48779,
+        759,
+        56230,
+        37033,
+        4081,
+        19703
+      ],
+      "returned_titles": [
+        "Bunny Drop",
+        "The Yakuza's Guide to Babysitting",
+        "Sweetness & Lightning",
+        "Kotaro Lives Alone",
+        "School Babysitters",
+        "The Yuzuki Family's Four Sons",
+        "Deaimon: Recipe for Happiness",
+        "Tokyo Godfathers",
+        "Grandpa and Grandma Turn Young Again",
+        "Today's Menu for the Emiya Family",
+        "Natsume's Book of Friends",
+        "Kyousougiga"
+      ],
+      "elapsed_sec": 7.67,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 12,
+      "returned_top_3_hits": [],
+      "returned_top_10_hits": [
+        10162,
+        32828
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.0,
+      "coverage_at_10": 0.25,
+      "correctly_empty": null
+    },
+    {
+      "id": "vibe-top-sports-anime-2023",
+      "category": "vibe-anchor",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        52826,
+        51761,
+        50695,
+        52229,
+        54301,
+        49376,
+        52614
+      ],
+      "returned_titles": [
+        "Tsurune - The Linking Shot -",
+        "Uma Musume: Pretty Derby - Road to the Top",
+        "MF Ghost",
+        "Birdie Wing: Golf Girls' Story Season 2",
+        "Overtake!",
+        "\"Ippon\" again!",
+        "MIX Season 2"
+      ],
+      "elapsed_sec": 0.04,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 7,
+      "returned_top_3_hits": [
+        51761,
+        52826
+      ],
+      "returned_top_10_hits": [
+        49376,
+        51761,
+        52229,
+        52614,
+        52826
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.6666666666666666,
+      "coverage_at_10": 0.8333333333333334,
+      "correctly_empty": null
+    },
+    {
+      "id": "vibe-underrated-shounen-world-building",
+      "category": "vibe-anchor",
+      "confidence": "low",
+      "mode": "find_a_show",
+      "returned_ids": [
+        58488,
+        2229,
+        10937,
+        34547,
+        2158,
+        9252,
+        45649
+      ],
+      "returned_titles": [
+        "Sengoku Youko 2nd Season",
+        "Dragon Quest: The Adventure of Dai",
+        "Mobile Suit Gundam: The Origin",
+        "Altair: A Record of Battles",
+        "Toward the Terra (TV)",
+        "Broken Blade 3",
+        "The First Slam Dunk"
+      ],
+      "elapsed_sec": 9.07,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 7,
+      "returned_top_3_hits": [],
+      "returned_top_10_hits": [],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.0,
+      "coverage_at_10": 0.0,
+      "correctly_empty": null
+    },
+    {
+      "id": "empty-fan-service-2000s",
+      "category": "known-failure",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        29317,
+        29101,
+        1711,
+        2260,
+        13357,
+        25157,
+        11783,
+        50392,
+        1149,
+        257,
+        16508,
+        4063,
+        9367
+      ],
+      "returned_titles": [
+        "Saekano: Fan Service of Love and Youth",
+        "Grisaia no Kajitsu Specials",
+        "Ryuusei Sentai Musumet",
+        "Kirameki☆Project",
+        "High School DxD Specials",
+        "Trinity Seven",
+        "Dog Days'",
+        "Chained Soldier",
+        "Super Heavy God Gravion Zwei",
+        "Ikki Tousen: Battle Vixens",
+        "Ebiten: Kouritsu Ebisugawa Koukou Tenmonbu Specials",
+        "Sekirei",
+        "Freezing"
+      ],
+      "elapsed_sec": 0.43,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": true,
+        "error": null
+      },
+      "returned_count": 13,
+      "returned_top_3_hits": [],
+      "returned_top_10_hits": [
+        257
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.0,
+      "coverage_at_10": 0.14285714285714285,
+      "correctly_empty": null
+    },
+    {
+      "id": "empty-fan-service-2010s",
+      "category": "known-failure",
+      "confidence": "medium",
+      "mode": "find_a_show",
+      "returned_ids": [
+        29317,
+        29101,
+        13357,
+        31326,
+        16508,
+        8456,
+        8599,
+        8057,
+        34999,
+        25157,
+        35413,
+        6324
+      ],
+      "returned_titles": [
+        "Saekano: Fan Service of Love and Youth",
+        "Grisaia no Kajitsu Specials",
+        "High School DxD Specials",
+        "High School DxD BorN Specials",
+        "Ebiten: Kouritsu Ebisugawa Koukou Tenmonbu Specials",
+        "Queen's Blade: Beautiful Warriors",
+        "Mayoi Neko Overrun! Specials",
+        "Shin Koihime†Musou: Otome Tairan",
+        "Kiitarou Shounen no Youkai Enikki: Jonan no Saijitsu",
+        "Trinity Seven",
+        "A Sister's All You Need",
+        "Omamori Himari"
+      ],
+      "elapsed_sec": 0.39,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": true,
+        "error": null
+      },
+      "returned_count": 12,
+      "returned_top_3_hits": [],
+      "returned_top_10_hits": [],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.0,
+      "coverage_at_10": 0.0,
+      "correctly_empty": null
+    },
+    {
+      "id": "empty-fan-service-main-series",
+      "category": "known-failure",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        10012,
+        11617,
+        29317,
+        1711,
+        18119,
+        31326,
+        21863,
+        25157,
+        50392,
+        940,
+        8057,
+        5333,
+        1659
+      ],
+      "returned_titles": [
+        "Carnival Phantasm",
+        "High School DxD",
+        "Saekano: Fan Service of Love and Youth",
+        "Ryuusei Sentai Musumet",
+        "Servant x Service",
+        "High School DxD BorN Specials",
+        "The Comic Artist and His Assistants",
+        "Trinity Seven",
+        "Chained Soldier",
+        "Inukami!",
+        "Shin Koihime†Musou: Otome Tairan",
+        "Ikkitousen: Great Guardians Specials",
+        "Mai-Otome Specials"
+      ],
+      "elapsed_sec": 0.38,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": true,
+        "error": null
+      },
+      "returned_count": 13,
+      "returned_top_3_hits": [
+        11617
+      ],
+      "returned_top_10_hits": [
+        11617
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.3333333333333333,
+      "coverage_at_10": 0.16666666666666666,
+      "correctly_empty": null
+    },
+    {
+      "id": "empty-heavy-fan-service",
+      "category": "known-failure",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        35338,
+        11617,
+        29101,
+        39026,
+        31326,
+        8456,
+        25157,
+        8599,
+        16508,
+        35413,
+        8057
+      ],
+      "returned_titles": [
+        "Saekano: How to Raise a Boring Girlfriend .flat - Fan Service of Love and Pure heart",
+        "High School DxD",
+        "Grisaia no Kajitsu Specials",
+        "How Heavy Are the Dumbbells You Lift?",
+        "High School DxD BorN Specials",
+        "Queen's Blade: Beautiful Warriors",
+        "Trinity Seven",
+        "Mayoi Neko Overrun! Specials",
+        "Ebiten: Kouritsu Ebisugawa Koukou Tenmonbu Specials",
+        "A Sister's All You Need",
+        "Shin Koihime†Musou: Otome Tairan"
+      ],
+      "elapsed_sec": 0.39,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": true,
+        "error": null
+      },
+      "returned_count": 11,
+      "returned_top_3_hits": [
+        11617
+      ],
+      "returned_top_10_hits": [
+        11617
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.3333333333333333,
+      "coverage_at_10": 0.16666666666666666,
+      "correctly_empty": null
+    },
+    {
+      "id": "empty-ecchi-hot",
+      "category": "known-failure",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        13357,
+        36726,
+        4136,
+        29101,
+        35338,
+        50392,
+        10109,
+        10187,
+        863,
+        3085,
+        8456,
+        31326,
+        297,
+        37210
+      ],
+      "returned_titles": [
+        "High School DxD Specials",
+        "Yuuna and the Haunted Hot Springs",
+        "Penguin Musume♥Heart",
+        "Grisaia no Kajitsu Specials",
+        "Saekano: How to Raise a Boring Girlfriend .flat - Fan Service of Love and Pure heart",
+        "Chained Soldier",
+        "Softenni! the Animation",
+        "HenSemi (TV)",
+        "High School Girls",
+        "Indian Summer",
+        "Queen's Blade: Beautiful Warriors",
+        "High School DxD BorN Specials",
+        "Grenadier: The Beautiful Warrior",
+        "How Not to Summon a Demon Lord"
+      ],
+      "elapsed_sec": 0.45,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": true,
+        "error": null
+      },
+      "returned_count": 14,
+      "returned_top_3_hits": [],
+      "returned_top_10_hits": [],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.0,
+      "coverage_at_10": 0.0,
+      "correctly_empty": null
+    },
+    {
+      "id": "empty-vague-dark",
+      "category": "known-failure",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        2025,
+        52505,
+        33,
+        34599,
+        60489,
+        1482,
+        1818,
+        59205
+      ],
+      "returned_titles": [
+        "Darker than Black",
+        "Dark Gathering",
+        "Berserk",
+        "Made in Abyss",
+        "Takopi's Original Sin",
+        "D.Gray-man",
+        "Claymore",
+        "Clevatess"
+      ],
+      "elapsed_sec": 7.8,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 8,
+      "returned_top_3_hits": [],
+      "returned_top_10_hits": [
+        33,
+        34599
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": null,
+      "coverage_at_10": 0.4,
+      "correctly_empty": null
+    },
+    {
+      "id": "franchise-fma-brotherhood",
+      "category": "franchise-title",
+      "confidence": "medium",
+      "mode": "find_a_show",
+      "returned_ids": [
+        5114,
+        121,
+        7902
+      ],
+      "returned_titles": [
+        "Fullmetal Alchemist: Brotherhood",
+        "Fullmetal Alchemist",
+        "Fullmetal Alchemist: Brotherhood 4-koma Theater"
+      ],
+      "elapsed_sec": 8.08,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 3,
+      "returned_top_3_hits": [
+        121,
+        5114
+      ],
+      "returned_top_10_hits": [
+        121,
+        5114
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.6666666666666666,
+      "coverage_at_10": 0.25,
+      "correctly_empty": null
+    },
+    {
+      "id": "franchise-cowboy-bebop",
+      "category": "franchise-title",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        1,
+        400,
+        6,
+        52093,
+        1184
+      ],
+      "returned_titles": [
+        "Cowboy Bebop",
+        "Outlaw Star",
+        "Trigun",
+        "Trigun Stampede",
+        "Lost Universe"
+      ],
+      "elapsed_sec": 9.52,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 5,
+      "returned_top_3_hits": [
+        1,
+        400
+      ],
+      "returned_top_10_hits": [
+        1,
+        6,
+        400
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.6666666666666666,
+      "coverage_at_10": 0.375,
+      "correctly_empty": null
+    },
+    {
+      "id": "franchise-steins-gate",
+      "category": "franchise-title",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        9253,
+        27957,
+        7311,
+        13599
+      ],
+      "returned_titles": [
+        "Steins;Gate",
+        "Steins;Gate: The Sagacious Wisdom of Cognitive Computing",
+        "The Disappearance of Haruhi Suzumiya",
+        "Robotics;Notes"
+      ],
+      "elapsed_sec": 8.82,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 4,
+      "returned_top_3_hits": [
+        9253
+      ],
+      "returned_top_10_hits": [
+        9253,
+        13599
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.3333333333333333,
+      "coverage_at_10": 0.25,
+      "correctly_empty": null
+    },
+    {
+      "id": "franchise-bleach-tybw",
+      "category": "franchise-title",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        41467
+      ],
+      "returned_titles": [
+        "Bleach: Thousand-Year Blood War"
+      ],
+      "elapsed_sec": 9.2,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 1,
+      "returned_top_3_hits": [
+        41467
+      ],
+      "returned_top_10_hits": [
+        41467
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.3333333333333333,
+      "coverage_at_10": 0.14285714285714285,
+      "correctly_empty": null
+    },
+    {
+      "id": "franchise-kaguya-sama-ultra-romantic",
+      "category": "franchise-title",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        37999,
+        44270,
+        61839
+      ],
+      "returned_titles": [
+        "Kaguya-sama: Love is War",
+        "He Wei Dao x Kaguya-sama: Love is War",
+        "I Want to End This Love Game"
+      ],
+      "elapsed_sec": 9.12,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 3,
+      "returned_top_3_hits": [
+        37999
+      ],
+      "returned_top_10_hits": [
+        37999
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.3333333333333333,
+      "coverage_at_10": 0.14285714285714285,
+      "correctly_empty": null
+    },
+    {
+      "id": "slt-eva-madoka",
+      "category": "slt-anchor",
+      "confidence": "high",
+      "mode": "shows_like_this",
+      "returned_ids": [
+        43299,
+        339,
+        440,
+        10721,
+        9253,
+        13125,
+        60489,
+        34599,
+        31240,
+        16498,
+        13601,
+        1575,
+        6547,
+        33352,
+        37450
+      ],
+      "returned_titles": [
+        "Wonder Egg Priority",
+        "Serial Experiments Lain",
+        "Revolutionary Girl Utena",
+        "Penguindrum",
+        "Steins;Gate",
+        "From the New World",
+        "Takopi's Original Sin",
+        "Made in Abyss",
+        "Re:ZERO -Starting Life in Another World-",
+        "Attack on Titan",
+        "Psycho-Pass",
+        "Code Geass: Lelouch of the Rebellion",
+        "Angel Beats!",
+        "Violet Evergarden",
+        "Rascal Does Not Dream of Bunny Girl Senpai"
+      ],
+      "elapsed_sec": 19.04,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 15,
+      "returned_top_3_hits": [
+        339
+      ],
+      "returned_top_10_hits": [
+        339,
+        10721,
+        13125
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.3333333333333333,
+      "coverage_at_10": 0.375,
+      "correctly_empty": null
+    },
+    {
+      "id": "slt-aot-kingdom",
+      "category": "slt-anchor",
+      "confidence": "high",
+      "mode": "shows_like_this",
+      "returned_ids": [
+        37521,
+        33,
+        5114,
+        1575,
+        41457,
+        37520,
+        37779,
+        40748,
+        38000,
+        52588,
+        136,
+        41467
+      ],
+      "returned_titles": [
+        "Vinland Saga",
+        "Berserk",
+        "Fullmetal Alchemist: Brotherhood",
+        "Code Geass: Lelouch of the Rebellion",
+        "86 Eighty-Six",
+        "Dororo",
+        "The Promised Neverland",
+        "Jujutsu Kaisen",
+        "Demon Slayer: Kimetsu no Yaiba",
+        "Kaiju No. 8",
+        "Hunter x Hunter",
+        "Bleach: Thousand-Year Blood War"
+      ],
+      "elapsed_sec": 16.6,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 12,
+      "returned_top_3_hits": [
+        33,
+        37521
+      ],
+      "returned_top_10_hits": [
+        33,
+        37521,
+        41457
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.6666666666666666,
+      "coverage_at_10": 0.375,
+      "correctly_empty": null
+    },
+    {
+      "id": "slt-steins-psycho",
+      "category": "slt-anchor",
+      "confidence": "high",
+      "mode": "shows_like_this",
+      "returned_ids": [
+        40046,
+        1535,
+        13125,
+        46095,
+        35737,
+        1575,
+        23283,
+        41433,
+        60489,
+        22535,
+        42310,
+        31043,
+        31240
+      ],
+      "returned_titles": [
+        "ID: INVADED",
+        "Death Note",
+        "From the New World",
+        "Vivy -Fluorite Eye's Song-",
+        "Pluto",
+        "Code Geass: Lelouch of the Rebellion",
+        "Terror in Resonance",
+        "Akudama Drive",
+        "Takopi's Original Sin",
+        "Parasyte: The Maxim",
+        "Cyberpunk: Edgerunners",
+        "Erased",
+        "Re:ZERO -Starting Life in Another World-"
+      ],
+      "elapsed_sec": 18.53,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 13,
+      "returned_top_3_hits": [],
+      "returned_top_10_hits": [
+        1535,
+        13125
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.0,
+      "coverage_at_10": 0.25,
+      "correctly_empty": null
+    },
+    {
+      "id": "slt-frieren-mushishi",
+      "category": "slt-anchor",
+      "confidence": "medium",
+      "mode": "shows_like_this",
+      "returned_ids": [
+        41025,
+        35838,
+        4081,
+        2246,
+        39575,
+        40571,
+        35062,
+        35557,
+        34798,
+        34599,
+        58788
+      ],
+      "returned_titles": [
+        "To Your Eternity",
+        "Girls' Last Tour",
+        "Natsume's Book of Friends",
+        "Mononoke",
+        "Somali and the Forest Spirit",
+        "Wandering Witch: The Journey of Elaina",
+        "The Ancient Magus' Bride",
+        "Land of the Lustrous",
+        "Laid-Back Camp",
+        "Made in Abyss",
+        "Journal with Witch"
+      ],
+      "elapsed_sec": 18.71,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 11,
+      "returned_top_3_hits": [
+        4081
+      ],
+      "returned_top_10_hits": [
+        4081,
+        35062,
+        35838,
+        40571
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.3333333333333333,
+      "coverage_at_10": 0.5714285714285714,
+      "correctly_empty": null
+    },
+    {
+      "id": "hidden-quiet-contemplative-visuals",
+      "category": "hidden-gems",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [
+        457,
+        35838,
+        17549,
+        34798,
+        58125,
+        58788,
+        3167,
+        52215,
+        50796
+      ],
+      "returned_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori",
+        "Laid-Back Camp",
+        "Look Back",
+        "Journal with Witch",
+        "Time of Eve",
+        "Orb: On the Movements of the Earth",
+        "Insomniacs After School"
+      ],
+      "elapsed_sec": 7.85,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 9,
+      "returned_top_3_hits": [
+        457,
+        35838
+      ],
+      "returned_top_10_hits": [
+        457,
+        35838
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.6666666666666666,
+      "coverage_at_10": 0.25,
+      "correctly_empty": null
+    },
+    {
+      "id": "hidden-experimental-unconventional",
+      "category": "hidden-gems",
+      "confidence": "medium",
+      "mode": "find_a_show",
+      "returned_ids": [
+        875,
+        44059,
+        28085,
+        31696,
+        6774,
+        28149,
+        5802,
+        40152,
+        50452,
+        53447,
+        32979
+      ],
+      "returned_titles": [
+        "Mind Game",
+        "Puparia",
+        "Wonder",
+        "Witch Village Story",
+        "Welcome to Irabu's Office",
+        "Japan Anima(tor)'s Exhibition",
+        "Fantascope: Tylostoma",
+        "Porte",
+        "Undetectable Box",
+        "To Be Hero X",
+        "Flip Flappers"
+      ],
+      "elapsed_sec": 8.21,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 11,
+      "returned_top_3_hits": [
+        875
+      ],
+      "returned_top_10_hits": [
+        875
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.3333333333333333,
+      "coverage_at_10": 0.125,
+      "correctly_empty": null
+    },
+    {
+      "id": "hidden-short-philosophical",
+      "category": "hidden-gems",
+      "confidence": "medium",
+      "mode": "find_a_show",
+      "returned_ids": [
+        52215,
+        486,
+        457,
+        35838,
+        14353,
+        48727,
+        58788
+      ],
+      "returned_titles": [
+        "Orb: On the Movements of the Earth",
+        "Kino's Journey",
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Death Billiards",
+        "Yoru no Kuni",
+        "Journal with Witch"
+      ],
+      "elapsed_sec": 8.49,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": false,
+        "error": null
+      },
+      "returned_count": 7,
+      "returned_top_3_hits": [
+        486
+      ],
+      "returned_top_10_hits": [
+        486,
+        35838
+      ],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.3333333333333333,
+      "coverage_at_10": 0.25,
+      "correctly_empty": null
+    },
+    {
+      "id": "hidden-90s-mature-tv",
+      "category": "hidden-gems",
+      "confidence": "high",
+      "mode": "find_a_show",
+      "returned_ids": [],
+      "returned_titles": [],
+      "elapsed_sec": 6.93,
+      "engine_meta": {
+        "success": true,
+        "low_confidence": true,
+        "error": null
+      },
+      "returned_count": 0,
+      "returned_top_3_hits": [],
+      "returned_top_10_hits": [],
+      "must_not_appear_violations": [],
+      "precision_at_3": 0.0,
+      "coverage_at_10": 0.0,
+      "correctly_empty": null
+    }
+  ]
+}

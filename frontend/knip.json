@@ -1,0 +1,9 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "scripts/validate-seo-pages.js"
+  ],
+  "ignore": [
+    "public/seo-page.css"
+  ]
+}

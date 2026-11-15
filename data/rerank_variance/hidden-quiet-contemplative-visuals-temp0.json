@@ -1,0 +1,192 @@
+{
+  "captured_at": "2026-09-20T04:54:22+00:00",
+  "entry_id": "hidden-quiet-contemplative-visuals",
+  "mode": "find_a_show",
+  "query": "quiet, contemplative anime with beautiful visuals",
+  "reference_titles": null,
+  "n_runs": 5,
+  "label": "temp0",
+  "runs": [
+    {
+      "pool_size": 9,
+      "top_1_title": "Mushi-Shi",
+      "top_1_confidence": 95,
+      "top_3_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori"
+      ],
+      "top_5_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori",
+        "Laid-Back Camp",
+        "Look Back"
+      ],
+      "top_10_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori",
+        "Laid-Back Camp",
+        "Look Back",
+        "Journal with Witch",
+        "Time of Eve",
+        "Orb: On the Movements of the Earth",
+        "Insomniacs After School"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 8.16
+    },
+    {
+      "pool_size": 9,
+      "top_1_title": "Mushi-Shi",
+      "top_1_confidence": 95,
+      "top_3_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori"
+      ],
+      "top_5_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori",
+        "Laid-Back Camp",
+        "Look Back"
+      ],
+      "top_10_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori",
+        "Laid-Back Camp",
+        "Look Back",
+        "Journal with Witch",
+        "Time of Eve",
+        "Orb: On the Movements of the Earth",
+        "Insomniacs After School"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 7.27
+    },
+    {
+      "pool_size": 9,
+      "top_1_title": "Mushi-Shi",
+      "top_1_confidence": 95,
+      "top_3_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori"
+      ],
+      "top_5_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori",
+        "Laid-Back Camp",
+        "Look Back"
+      ],
+      "top_10_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori",
+        "Laid-Back Camp",
+        "Look Back",
+        "Journal with Witch",
+        "Time of Eve",
+        "Insomniacs After School",
+        "Orb: On the Movements of the Earth"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 7.88
+    },
+    {
+      "pool_size": 9,
+      "top_1_title": "Mushi-Shi",
+      "top_1_confidence": 95,
+      "top_3_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori"
+      ],
+      "top_5_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori",
+        "Laid-Back Camp",
+        "Look Back"
+      ],
+      "top_10_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori",
+        "Laid-Back Camp",
+        "Look Back",
+        "Journal with Witch",
+        "Time of Eve",
+        "Insomniacs After School",
+        "Orb: On the Movements of the Earth"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 7.48
+    },
+    {
+      "pool_size": 9,
+      "top_1_title": "Mushi-Shi",
+      "top_1_confidence": 95,
+      "top_3_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori"
+      ],
+      "top_5_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori",
+        "Laid-Back Camp",
+        "Look Back"
+      ],
+      "top_10_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori",
+        "Laid-Back Camp",
+        "Look Back",
+        "Journal with Witch",
+        "Time of Eve",
+        "Insomniacs After School",
+        "Orb: On the Movements of the Earth"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 7.27
+    }
+  ],
+  "summary": {
+    "pool_size": {
+      "min": 9,
+      "max": 9,
+      "mean": 9,
+      "stdev": 0.0
+    },
+    "pool_collapse_count": 0,
+    "banner_fire_count": 0,
+    "top_3_jaccard_mean": 1.0,
+    "top_5_jaccard_mean": 1.0,
+    "top_1_confidence": {
+      "min": 95,
+      "max": 95,
+      "range": 0,
+      "mean": 95,
+      "stdev": 0.0
+    },
+    "elapsed_s_total": 38.06,
+    "elapsed_s_mean": 7.61
+  }
+}

@@ -1,0 +1,66 @@
+name: Engine Regression — Full Tier
+
+# Runs the full 47-entry regression check (~30-45 minutes) on a weekly
+# schedule and via manual dispatch. Surfaces engine drift that the fast
+# tier may not catch on a smaller sample.
+#
+# Always advisory: failures show in the run summary but do not block
+# anything (no PRs trigger this workflow). Treat findings as a queue of
+# baseline-refresh or prompt-investigation candidates.
+#
+# Required secrets:
+#   GOOGLE_API_KEY — Gemini API key for the reranker and embeddings.
+
+on:
+  workflow_dispatch:
+    inputs:
+      subset:
+        description: 'Optional: stratified subset size (leave empty for full run)'
+        required: false
+        type: string
+  schedule:
+    # Mondays 03:00 UTC. Low-traffic window; results land in time for
+    # any Monday engine-iteration work.
+    - cron: '0 3 * * 1'
+
+jobs:
+  full-tier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run full-tier regression check
+        id: check
+        continue-on-error: true
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          TESTING: '1'
+        run: |
+          SUBSET_ARG=""
+          if [ -n "${{ github.event.inputs.subset }}" ]; then
+            SUBSET_ARG="--subset ${{ github.event.inputs.subset }}"
+          fi
+          python tests/test_engine_regression.py --check-regression $SUBSET_ARG
+
+      - name: Summarize report
+        if: always()
+        run: |
+          python tools/summarize_regression_report.py >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-check-report-full
+          path: tests/data/regression_check_report.json
+          if-no-files-found: warn

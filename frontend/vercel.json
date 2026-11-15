@@ -1,0 +1,13 @@
+{
+  "redirects": [
+    { "source": "/:path(.*)", "has": [{ "type": "host", "value": "www.animeintel.app" }], "destination": "https://animeintel.app/:path", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/robots.txt", "destination": "/robots.txt" },
+    { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
+    { "source": "/seo-page.css", "destination": "/seo-page.css" },
+    { "source": "/anime/:path*", "destination": "/anime/:path*/index.html" },
+    { "source": "/top/:path*", "destination": "/top/:path*/index.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

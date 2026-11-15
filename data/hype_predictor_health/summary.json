@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-11-01T12:19:18.033737+00:00",
+  "baseline_mae": 0.4358,
+  "warning_threshold": 0.4794,
+  "alert_threshold": 0.523,
+  "window_days": 30,
+  "total_predictions": 183,
+  "n_model_versions": 1,
+  "overall_rolling_mae": 0.3384,
+  "overall_rolling_rmse": 0.462,
+  "overall_drift_status": "healthy",
+  "per_model": [
+    {
+      "model_version": "lin-20261011-f7568c-v5324",
+      "n_predictions": 183,
+      "n_with_actual": 180,
+      "date_range_start": "2026-10-11",
+      "date_range_end": "2026-10-26",
+      "rolling_mae": 0.3384,
+      "rolling_rmse": 0.462,
+      "drift_status": "healthy"
+    }
+  ]
+}

@@ -1,0 +1,323 @@
+name: Weekly Airing-Show Predictions
+
+# Runs every Monday at 06:00 UTC.
+#
+# Step 0 — Wake Railway services (automated, NEW)
+#   Deploys the self-hosted Jikan (jikan-rest) and its MongoDB via the
+#   Railway GraphQL API, waits for both to reach deployment status SUCCESS,
+#   then HTTP-probes Jikan until it serves a real response. Removes both
+#   deployments in a final always-run cleanup step so Railway costs stay
+#   near $0 between Monday runs.
+#   Requires RAILWAY_TOKEN + RAILWAY_SERVICE_ID_JIKAN +
+#   RAILWAY_SERVICE_ID_MONGO + RAILWAY_ENVIRONMENT_ID secrets.
+#
+# Step 1 — refresh_airing_scores.py (Phase 1)
+#   Fetches fresh mal_score + scored_by from Jikan for every show in the
+#   current + previous season cohort and writes them back to anime_info.
+#   Fixes the stale actual_score_at_time problem: the ingestor skips
+#   existing shows, so without this refresh the prediction log snapshots
+#   the same frozen score every Monday.
+#   Requires JIKAN_BASE_URL secret. Exit 1 (per-show Jikan errors) and
+#   exit 2 (zero shows) are soft signals — prediction step still runs.
+#
+# Step 2 — refresh_airing_sentiment.py (Phase 2)
+#   For each show in the CURRENT season, fetches latest episode reviews
+#   from Jikan, computes fresh VADER avg_sentiment, and distills a
+#   trajectory-aware consensus via Gemini. Updates anime_info.avg_sentiment
+#   only (consensus_json stays at neutral ingest-time value for the
+#   Encyclopedia). Writes trajectory-aware consensus to airing_sentiment_log
+#   for the Season Tracker. Requires JIKAN_BASE_URL + GOOGLE_API_KEY.
+#   Exit 1 (per-show errors) and exit 2 (zero shows) are soft signals.
+#
+# Step 3 — predict_airing_shows.py (existing)
+#   Loads the latest trained HypePredictor, runs inference, and UPSERTs
+#   one row per show into score_prediction_log. Now reads week-fresh
+#   mal_score values from Step 1.
+#   No external API calls — pure Python + SQL.
+#
+# The composite PK (mal_id, prediction_date) means re-dispatching within
+# the same day overwrites rather than duplicates. Safe to retry on failure
+# or trigger manually via workflow_dispatch.
+#
+# Opens an auto-PR with the DB diff so the data landing in main is still
+# gated by human review (matches the seasonal-ingest.yml review pattern).
+# Low review burden: typical weekly diff is ~60 new rows in one table.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      season:
+        description: 'Explicit season tag (e.g., Fall_2026). Default: current + previous season.'
+        required: false
+        default: ''
+        type: string
+      source:
+        description: 'Prediction source enum'
+        required: false
+        default: 'weekly_update'
+        type: choice
+        options:
+          - weekly_update
+          - preseason_initial
+          - final
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Default GITHUB_TOKEN is read-only since Feb 2023. Both commit+push
+    # and gh pr create need write access. Same pattern as
+    # seasonal-ingest.yml.
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      # Step 1 (refresh_airing_scores) + Step 2 (refresh_airing_sentiment)
+      # both require Jikan. The public api.jikan.moe fallback was retired;
+      # self-hosted Railway instance is the only reliable upstream.
+      JIKAN_BASE_URL: ${{ secrets.JIKAN_BASE_URL }}
+      # Step 2 (refresh_airing_sentiment) requires Gemini for distillation.
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      # Step 0 / final cleanup — Railway GraphQL API lifecycle management.
+      # Deploys jikan-rest + Mongo before the Jikan steps and removes their
+      # deployments after the workflow completes (always-run cleanup).
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_SERVICE_ID_JIKAN: ${{ secrets.RAILWAY_SERVICE_ID_JIKAN }}
+      RAILWAY_SERVICE_ID_MONGO: ${{ secrets.RAILWAY_SERVICE_ID_MONGO }}
+      RAILWAY_ENVIRONMENT_ID: ${{ secrets.RAILWAY_ENVIRONMENT_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Wake Railway services (Mongo → Jikan)
+        id: wake_railway
+        run: |
+          API="https://backboard.railway.com/graphql/v2"
+
+          gql() {
+            curl -sf -X POST "$API" \
+              -H "Authorization: Bearer $RAILWAY_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$1"
+          }
+
+          deploy_service() {
+            local SID="$1" NAME="$2"
+            echo "Deploying $NAME..."
+            RESP=$(gql "$(jq -nc \
+              --arg sid "$SID" --arg eid "$RAILWAY_ENVIRONMENT_ID" \
+              '{query:"mutation D($sid:String!,$eid:String!){serviceInstanceDeployV2(serviceId:$sid,environmentId:$eid)}",variables:{sid:$sid,eid:$eid}}')")
+            ERR=$(echo "$RESP" | jq -r '.errors[0].message // empty')
+            [ -n "$ERR" ] && { echo "ERROR deploying $NAME: $ERR" >&2; return 1; }
+            echo "  $NAME deploy triggered."
+          }
+
+          wait_for_success() {
+            local SID="$1" NAME="$2" ELAPSED=0 MAX=300
+            echo "Waiting for $NAME to reach SUCCESS..."
+            while [ $ELAPSED -lt $MAX ]; do
+              STATUS=$(gql "$(jq -nc \
+                --arg sid "$SID" --arg eid "$RAILWAY_ENVIRONMENT_ID" \
+                '{query:"query S($sid:String!,$eid:String!){serviceInstance(serviceId:$sid,environmentId:$eid){latestDeployment{id status}}}",variables:{sid:$sid,eid:$eid}}')" \
+                | jq -r '.data.serviceInstance.latestDeployment.status // "UNKNOWN"')
+              echo "  $NAME: $STATUS (${ELAPSED}s elapsed)"
+              [ "$STATUS" = "SUCCESS" ] && echo "  $NAME is healthy." && return 0
+              [[ "$STATUS" =~ ^(FAILED|CRASHED)$ ]] && { echo "ERROR: $NAME deployment $STATUS" >&2; return 1; }
+              sleep 15; ELAPSED=$((ELAPSED + 15))
+            done
+            echo "ERROR: $NAME timed out after ${MAX}s" >&2; return 1
+          }
+
+          # Mongo first — Jikan requires it on startup
+          deploy_service "$RAILWAY_SERVICE_ID_MONGO" "Mongo"
+          wait_for_success "$RAILWAY_SERVICE_ID_MONGO" "Mongo"
+
+          # Then Jikan
+          deploy_service "$RAILWAY_SERVICE_ID_JIKAN" "Jikan"
+          wait_for_success "$RAILWAY_SERVICE_ID_JIKAN" "Jikan"
+
+          # HTTP probe — confirms Jikan's HTTP layer is up, not just the port.
+          # Any non-zero HTTP code (including 404) means the app server is
+          # responding; 000 means connection failed (not ready yet).
+          # Note: JIKAN_BASE_URL already includes /v4 — do not append it here.
+          echo "HTTP probe: waiting for Jikan HTTP layer..."
+          for i in $(seq 1 12); do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" "$JIKAN_BASE_URL/anime/1" || echo "000")
+            [ "$CODE" != "000" ] && echo "  Jikan HTTP layer ready — HTTP $CODE (attempt $i)." && exit 0
+            echo "  attempt $i — connection failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "ERROR: Jikan did not respond within 2 minutes." >&2; exit 1
+
+      - name: Refresh airing-cohort scores from Jikan
+        id: refresh_scores
+        run: |
+          SEASON="${{ github.event.inputs.season }}"
+          CMD="python tools/refresh_airing_scores.py"
+          if [ -n "$SEASON" ]; then
+            CMD="$CMD --season $SEASON"
+          fi
+
+          # Exit 1 (per-show Jikan errors) is tolerated — a partial
+          # score refresh is better than blocking the whole prediction
+          # run. Exit 2 (zero shows) is also soft. Any other non-zero
+          # exit is a real failure (e.g. missing JIKAN_BASE_URL secret).
+          set +e
+          $CMD
+          CODE=$?
+          set -e
+          if [ $CODE -ne 0 ] && [ $CODE -ne 1 ] && [ $CODE -ne 2 ]; then
+            echo "Score refresh failed with exit code $CODE"
+            exit $CODE
+          fi
+          echo "exit_code=$CODE" >> $GITHUB_OUTPUT
+
+      - name: Refresh airing-cohort sentiment via Gemini
+        id: refresh_sentiment
+        run: |
+          SEASON="${{ github.event.inputs.season }}"
+          CMD="python tools/refresh_airing_sentiment.py"
+          if [ -n "$SEASON" ]; then
+            CMD="$CMD --season $SEASON"
+          fi
+
+          # Exit 1 (per-show errors) and exit 2 (zero shows) are soft.
+          # Exit 3 (missing GOOGLE_API_KEY or JIKAN_BASE_URL) is a hard
+          # failure — the step is broken, not just partially degraded.
+          set +e
+          $CMD
+          CODE=$?
+          set -e
+          if [ $CODE -ne 0 ] && [ $CODE -ne 1 ] && [ $CODE -ne 2 ]; then
+            echo "Sentiment refresh failed with exit code $CODE"
+            exit $CODE
+          fi
+          echo "exit_code=$CODE" >> $GITHUB_OUTPUT
+
+      - name: Run weekly prediction logging
+        id: predict
+        run: |
+          SEASON="${{ github.event.inputs.season }}"
+          SOURCE="${{ github.event.inputs.source || 'weekly_update' }}"
+          CMD="python tools/predict_airing_shows.py --source $SOURCE"
+          if [ -n "$SEASON" ]; then
+            CMD="$CMD --season $SEASON"
+          fi
+
+          # Exit code 2 (zero airing shows) is a soft signal — surface
+          # to CI logs but don't fail the step. The DB commit step below
+          # will no-op if nothing changed. All other non-zero exits are
+          # real failures.
+          set +e
+          $CMD
+          CODE=$?
+          set -e
+          if [ $CODE -ne 0 ] && [ $CODE -ne 2 ]; then
+            echo "Prediction tool failed with exit code $CODE"
+            exit $CODE
+          fi
+          echo "exit_code=$CODE" >> $GITHUB_OUTPUT
+
+      - name: Check for DB changes
+        id: changes
+        run: |
+          if git diff --quiet data/anime_intelligence_v2.db; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No prediction_log rows were written (or re-run was idempotent)."
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit + push weekly prediction snapshot
+        if: steps.changes.outputs.changed == 'true'
+        id: commit
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          BRANCH="predictions/weekly-${TIMESTAMP}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add data/anime_intelligence_v2.db
+          git commit -m "Weekly airing-show prediction snapshot: $(date +%Y-%m-%d)
+
+          Automated weekly prediction logging via scheduled cron.
+
+          Co-Authored-By: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+          git push origin "$BRANCH"
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Open pull request
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TITLE="Weekly prediction snapshot $(date +%Y-%m-%d)"
+          gh pr create \
+            --title "$TITLE" \
+            --body "## Summary
+          - Step 1: airing-cohort mal_score + scored_by refreshed from Jikan (current + previous season)
+          - Step 2: airing-cohort avg_sentiment refreshed + trajectory consensus written to airing_sentiment_log (current season)
+          - Step 3: automated weekly prediction logging — one row per show in the current + previous season cohort
+          - Composite PK (mal_id, prediction_date) means idempotent re-runs; this PR represents one week's snapshot
+
+          ## Verification
+          - [ ] score_prediction_log row count increase matches expected cohort size (~50-80)
+          - [ ] actual_score_at_time values differ from first-ingest values for airing shows (spot-check 2-3 against MAL)
+          - [ ] airing_sentiment_log has new rows for current-season shows (check row count)
+          - [ ] airing_sentiment_log.consensus_json contains trajectory language (spot-check 1-2 entries)
+          - [ ] model_version column consistent across all prediction rows (one weekly run = one trained model)
+          - [ ] No duplicate (mal_id, prediction_date) rows
+          - [ ] Merge when satisfied — low review burden; data-only diff
+          " \
+            --head "${{ steps.commit.outputs.branch }}" \
+            --base main
+
+      - name: Sleep Railway services (Jikan → Mongo)
+        if: always()
+        run: |
+          API="https://backboard.railway.com/graphql/v2"
+
+          gql() {
+            curl -sf -X POST "$API" \
+              -H "Authorization: Bearer $RAILWAY_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$1"
+          }
+
+          remove_service() {
+            local SID="$1" NAME="$2"
+            echo "Removing $NAME deployment..."
+            RESP=$(gql "$(jq -nc \
+              --arg sid "$SID" --arg eid "$RAILWAY_ENVIRONMENT_ID" \
+              '{query:"query G($sid:String!,$eid:String!){serviceInstance(serviceId:$sid,environmentId:$eid){latestDeployment{id status}}}",variables:{sid:$sid,eid:$eid}}')")
+            ID=$(echo "$RESP" | jq -r '.data.serviceInstance.latestDeployment.id     // ""')
+            ST=$(echo "$RESP" | jq -r '.data.serviceInstance.latestDeployment.status // "NONE"')
+            if [ -z "$ID" ] || [[ "$ST" =~ ^(REMOVED|NONE)$ ]]; then
+              echo "  $NAME: no active deployment (status: $ST) — skipping."
+              return 0
+            fi
+            gql "$(jq -nc --arg id "$ID" \
+              '{query:"mutation R($id:String!){deploymentRemove(id:$id)}",variables:{id:$id}}')" > /dev/null
+            echo "  $NAME deployment $ID removed."
+          }
+
+          # Reverse dependency order: Jikan first, then Mongo
+          remove_service "$RAILWAY_SERVICE_ID_JIKAN" "Jikan"
+          remove_service "$RAILWAY_SERVICE_ID_MONGO" "Mongo"

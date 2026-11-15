@@ -1,0 +1,192 @@
+{
+  "captured_at": "2026-09-20T04:50:24+00:00",
+  "entry_id": "hidden-quiet-contemplative-visuals",
+  "mode": "find_a_show",
+  "query": "quiet, contemplative anime with beautiful visuals",
+  "reference_titles": null,
+  "n_runs": 5,
+  "label": "baseline",
+  "runs": [
+    {
+      "pool_size": 9,
+      "top_1_title": "Mushi-Shi",
+      "top_1_confidence": 93,
+      "top_3_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Laid-Back Camp"
+      ],
+      "top_5_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Laid-Back Camp",
+        "Non Non Biyori",
+        "Look Back"
+      ],
+      "top_10_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Laid-Back Camp",
+        "Non Non Biyori",
+        "Look Back",
+        "Time of Eve",
+        "Orb: On the Movements of the Earth",
+        "Insomniacs After School",
+        "Journal with Witch"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 7.41
+    },
+    {
+      "pool_size": 9,
+      "top_1_title": "Mushi-Shi",
+      "top_1_confidence": 93,
+      "top_3_titles": [
+        "Mushi-Shi",
+        "Non Non Biyori",
+        "Laid-Back Camp"
+      ],
+      "top_5_titles": [
+        "Mushi-Shi",
+        "Non Non Biyori",
+        "Laid-Back Camp",
+        "Girls' Last Tour",
+        "Time of Eve"
+      ],
+      "top_10_titles": [
+        "Mushi-Shi",
+        "Non Non Biyori",
+        "Laid-Back Camp",
+        "Girls' Last Tour",
+        "Time of Eve",
+        "Journal with Witch",
+        "Orb: On the Movements of the Earth",
+        "Insomniacs After School",
+        "Look Back"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 8.39
+    },
+    {
+      "pool_size": 9,
+      "top_1_title": "Mushi-Shi",
+      "top_1_confidence": 93,
+      "top_3_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Laid-Back Camp"
+      ],
+      "top_5_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Laid-Back Camp",
+        "Non Non Biyori",
+        "Journal with Witch"
+      ],
+      "top_10_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Laid-Back Camp",
+        "Non Non Biyori",
+        "Journal with Witch",
+        "Orb: On the Movements of the Earth",
+        "Look Back",
+        "Time of Eve",
+        "Insomniacs After School"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 8.4
+    },
+    {
+      "pool_size": 8,
+      "top_1_title": "Mushi-Shi",
+      "top_1_confidence": 98,
+      "top_3_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Laid-Back Camp"
+      ],
+      "top_5_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Laid-Back Camp",
+        "Non Non Biyori",
+        "Orb: On the Movements of the Earth"
+      ],
+      "top_10_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Laid-Back Camp",
+        "Non Non Biyori",
+        "Orb: On the Movements of the Earth",
+        "Look Back",
+        "Journal with Witch",
+        "Time of Eve"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 7.48
+    },
+    {
+      "pool_size": 10,
+      "top_1_title": "Mushi-Shi",
+      "top_1_confidence": 92,
+      "top_3_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori"
+      ],
+      "top_5_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori",
+        "Laid-Back Camp",
+        "Journal with Witch"
+      ],
+      "top_10_titles": [
+        "Mushi-Shi",
+        "Girls' Last Tour",
+        "Non Non Biyori",
+        "Laid-Back Camp",
+        "Journal with Witch",
+        "Orb: On the Movements of the Earth",
+        "Time of Eve",
+        "Insomniacs After School",
+        "Look Back",
+        "A Silent Voice"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 6.96
+    }
+  ],
+  "summary": {
+    "pool_size": {
+      "min": 8,
+      "max": 10,
+      "mean": 9,
+      "stdev": 0.71
+    },
+    "pool_collapse_count": 0,
+    "banner_fire_count": 0,
+    "top_3_jaccard_mean": 0.65,
+    "top_5_jaccard_mean": 0.7,
+    "top_1_confidence": {
+      "min": 92,
+      "max": 98,
+      "range": 6,
+      "mean": 93.8,
+      "stdev": 2.39
+    },
+    "elapsed_s_total": 38.64,
+    "elapsed_s_mean": 7.73
+  }
+}

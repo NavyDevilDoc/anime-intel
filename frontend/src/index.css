@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-vault-bg: #0f1923;
+  --color-vault-surface: #1a2736;
+  --color-vault-border: #2a3a4a;
+  --color-vault-accent: #3b82f6;
+  --color-vault-accent-hover: #2563eb;
+  --color-vault-text: #e2e8f0;
+  --color-vault-text-muted: #94a3b8;
+  --color-vault-success: #22c55e;
+  --color-vault-warning: #eab308;
+  --color-vault-danger: #ef4444;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-vault-bg);
+  color: var(--color-vault-text);
+  font-family: system-ui, -apple-system, sans-serif;
+}

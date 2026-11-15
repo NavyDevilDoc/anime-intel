@@ -1,0 +1,380 @@
+/* Lightweight styles for static SEO content pages.
+   Matches the app's dark theme without requiring Tailwind or React. */
+
+:root {
+  --bg-primary: #0f172a;
+  --bg-card: #1e293b;
+  --bg-card-hover: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent: #38bdf8;
+  --accent-hover: #7dd3fc;
+  --green: #4ade80;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --border: #334155;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); text-decoration: underline; }
+
+/* Nav */
+.nav {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.nav-brand {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.nav-links { display: flex; gap: 1rem; }
+.nav-links a { color: var(--text-secondary); font-size: 0.875rem; }
+.nav-links a:hover { color: var(--text-primary); text-decoration: none; }
+
+/* Layout */
+.container {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* Show header */
+.show-header { margin-bottom: 1.5rem; text-align: center; }
+.show-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+}
+.show-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+.show-meta span::after { content: '·'; margin-left: 0.5rem; }
+.show-meta span:last-child::after { content: ''; margin-left: 0; }
+
+/* MAL content rating pill — matches the React RatingPill palette. */
+.rating-pill {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 0.25rem;
+  color: #ffffff;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+.rating-pill-g     { background-color: #15803d; }  /* tw green-700  */
+.rating-pill-pg    { background-color: #22c55e; }  /* tw green-500  */
+.rating-pill-pg13  { background-color: #ca8a04; }  /* tw yellow-600 */
+.rating-pill-r     { background-color: #ea580c; }  /* tw orange-600 */
+.rating-pill-rplus { background-color: #b91c1c; }  /* tw red-700    */
+.rating-pill-rx    { background-color: #7f1d1d; }  /* tw red-900    */
+
+/* Hero row — poster on the left + 2x2 stats grid on the right. When the
+   poster is absent (missing URL in data, or MAL CDN 404 at runtime via the
+   inline onerror handler), .hero-row-no-poster collapses the layout to a
+   single column so stats-row reclaims full width. */
+.hero-row {
+  display: grid;
+  grid-template-columns: minmax(0, 240px) 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.hero-row-no-poster { grid-template-columns: 1fr; }
+
+.hero-poster-col { width: 100%; }
+.hero-poster-link {
+  display: block;
+  position: relative;
+  aspect-ratio: 2 / 3;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+.hero-poster-link img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.hero-poster-attribution {
+  position: absolute;
+  bottom: 0.25rem;
+  right: 0.25rem;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  font-size: 0.625rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+.hero-poster-link:hover .hero-poster-attribution { opacity: 1; }
+
+@media (max-width: 640px) {
+  .hero-row { grid-template-columns: 1fr; justify-items: center; }
+  .hero-poster-col { max-width: 220px; }
+  .hero-row .stats-row { width: 100%; }
+}
+
+/* Stat cards. The 2x2 grid override applies when stats-row is inside
+   .hero-row (poster present); the standalone .stats-row rule below
+   preserves the original auto-fit behavior anywhere else it might be
+   used in the future. */
+.hero-row .stats-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, 1fr);
+  margin-bottom: 0;
+}
+.hero-row .stat-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.375rem;
+}
+.hero-row .stat-value { font-size: 2.25rem; }
+.hero-row .stat-label { font-size: 0.875rem; }
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.stat-positive { color: var(--green); }
+.stat-negative { color: var(--red); }
+.stat-neutral { color: var(--yellow); }
+.stat-accent { color: var(--accent); }
+
+/* Content sections */
+.section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+.section-attribution {
+  font-weight: 400;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+.section p, .section li {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
+.section ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+.section li { margin-bottom: 0.25rem; }
+
+/* Pros/Cons grid */
+.pros-cons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+@media (max-width: 640px) {
+  .pros-cons { grid-template-columns: 1fr; }
+}
+.pros-title { color: var(--green); }
+.cons-title { color: var(--red); }
+
+/* Genre tags */
+.genre-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.genre-tag {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+/* Links / CTAs */
+.links-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.cta-button {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--bg-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.375rem;
+  transition: background 0.15s;
+}
+.cta-button:hover {
+  background: var(--accent-hover);
+  text-decoration: none;
+  color: var(--bg-primary);
+}
+.cta-button-secondary {
+  display: inline-block;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--accent);
+  transition: background 0.15s, color 0.15s;
+}
+.cta-button-secondary:hover {
+  background: var(--accent);
+  color: var(--bg-primary);
+  text-decoration: none;
+}
+.mal-link {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.mal-link:hover { color: var(--accent); }
+
+/* Internal links (genre categories) */
+.internal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.internal-link {
+  font-size: 0.8125rem;
+  color: var(--accent);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.625rem;
+}
+.internal-link:hover {
+  background: var(--bg-card-hover);
+  text-decoration: none;
+}
+
+/* Footer */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.footer a { color: var(--text-secondary); }
+.footer-links { display: flex; justify-content: center; gap: 1rem; margin-top: 0.5rem; }
+
+/* List page styles */
+.list-header { margin-bottom: 1.5rem; }
+.list-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+}
+.list-intro {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  margin-bottom: 1rem;
+}
+.ranked-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.ranked-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+.rank-number {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 2rem;
+  text-align: right;
+  padding-top: 0.125rem;
+}
+.ranked-item-content { flex: 1; }
+.ranked-item-title {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+.ranked-item-meta {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin-bottom: 0.375rem;
+}
+.ranked-item-summary {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.ranked-item-score {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--accent);
+  white-space: nowrap;
+  padding-top: 0.125rem;
+}
+.related-section { margin-top: 2rem; }
+.related-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}

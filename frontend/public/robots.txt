@@ -1,0 +1,16 @@
+# Anime Intel — robots.txt
+# https://animeintel.app
+
+User-agent: *
+Allow: /
+Allow: /how-it-works
+Allow: /privacy
+Allow: /contact
+Allow: /changelog
+Allow: /anime/
+Allow: /top/
+
+Disallow: /login
+Disallow: /admin
+
+Sitemap: https://animeintel.app/sitemap.xml

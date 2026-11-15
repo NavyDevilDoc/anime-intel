@@ -1,0 +1,200 @@
+{
+  "captured_at": "2026-09-20T04:48:29+00:00",
+  "entry_id": "slt-steins-psycho",
+  "mode": "shows_like_this",
+  "query": null,
+  "reference_titles": [
+    "Steins;Gate",
+    "Psycho-Pass"
+  ],
+  "n_runs": 5,
+  "label": "baseline",
+  "runs": [
+    {
+      "pool_size": 13,
+      "top_1_title": "ID: INVADED",
+      "top_1_confidence": 92,
+      "top_3_titles": [
+        "ID: INVADED",
+        "Death Note",
+        "From the New World"
+      ],
+      "top_5_titles": [
+        "ID: INVADED",
+        "Death Note",
+        "From the New World",
+        "Code Geass: Lelouch of the Rebellion",
+        "Cyberpunk: Edgerunners"
+      ],
+      "top_10_titles": [
+        "ID: INVADED",
+        "Death Note",
+        "From the New World",
+        "Code Geass: Lelouch of the Rebellion",
+        "Cyberpunk: Edgerunners",
+        "Terror in Resonance",
+        "Pluto",
+        "Vivy -Fluorite Eye's Song-",
+        "Erased",
+        "Akudama Drive"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 18.99
+    },
+    {
+      "pool_size": 13,
+      "top_1_title": "ID: INVADED",
+      "top_1_confidence": 92,
+      "top_3_titles": [
+        "ID: INVADED",
+        "Vivy -Fluorite Eye's Song-",
+        "Pluto"
+      ],
+      "top_5_titles": [
+        "ID: INVADED",
+        "Vivy -Fluorite Eye's Song-",
+        "Pluto",
+        "From the New World",
+        "Cyberpunk: Edgerunners"
+      ],
+      "top_10_titles": [
+        "ID: INVADED",
+        "Vivy -Fluorite Eye's Song-",
+        "Pluto",
+        "From the New World",
+        "Cyberpunk: Edgerunners",
+        "Death Note",
+        "Terror in Resonance",
+        "Code Geass: Lelouch of the Rebellion",
+        "Akudama Drive",
+        "Parasyte: The Maxim"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 18.54
+    },
+    {
+      "pool_size": 15,
+      "top_1_title": "Takopi's Original Sin",
+      "top_1_confidence": 70,
+      "top_3_titles": [
+        "Takopi's Original Sin",
+        "Vivy -Fluorite Eye's Song-",
+        "Erased"
+      ],
+      "top_5_titles": [
+        "Takopi's Original Sin",
+        "Vivy -Fluorite Eye's Song-",
+        "Erased",
+        "Death Note",
+        "ID: INVADED"
+      ],
+      "top_10_titles": [
+        "Takopi's Original Sin",
+        "Vivy -Fluorite Eye's Song-",
+        "Erased",
+        "Death Note",
+        "ID: INVADED",
+        "Cyberpunk: Edgerunners",
+        "Terror in Resonance",
+        "Akudama Drive",
+        "Pluto",
+        "Parasyte: The Maxim"
+      ],
+      "banner_fired": true,
+      "low_confidence": true,
+      "fallback_mode": "composite",
+      "elapsed_s": 5.22
+    },
+    {
+      "pool_size": 15,
+      "top_1_title": "Takopi's Original Sin",
+      "top_1_confidence": 70,
+      "top_3_titles": [
+        "Takopi's Original Sin",
+        "Vivy -Fluorite Eye's Song-",
+        "Erased"
+      ],
+      "top_5_titles": [
+        "Takopi's Original Sin",
+        "Vivy -Fluorite Eye's Song-",
+        "Erased",
+        "Death Note",
+        "ID: INVADED"
+      ],
+      "top_10_titles": [
+        "Takopi's Original Sin",
+        "Vivy -Fluorite Eye's Song-",
+        "Erased",
+        "Death Note",
+        "ID: INVADED",
+        "Cyberpunk: Edgerunners",
+        "Terror in Resonance",
+        "Akudama Drive",
+        "Pluto",
+        "Parasyte: The Maxim"
+      ],
+      "banner_fired": true,
+      "low_confidence": true,
+      "fallback_mode": "composite",
+      "elapsed_s": 5.22
+    },
+    {
+      "pool_size": 13,
+      "top_1_title": "ID: INVADED",
+      "top_1_confidence": 92,
+      "top_3_titles": [
+        "ID: INVADED",
+        "From the New World",
+        "Death Note"
+      ],
+      "top_5_titles": [
+        "ID: INVADED",
+        "From the New World",
+        "Death Note",
+        "Vivy -Fluorite Eye's Song-",
+        "Pluto"
+      ],
+      "top_10_titles": [
+        "ID: INVADED",
+        "From the New World",
+        "Death Note",
+        "Vivy -Fluorite Eye's Song-",
+        "Pluto",
+        "Terror in Resonance",
+        "Cyberpunk: Edgerunners",
+        "Code Geass: Lelouch of the Rebellion",
+        "Akudama Drive",
+        "Parasyte: The Maxim"
+      ],
+      "banner_fired": false,
+      "low_confidence": false,
+      "fallback_mode": null,
+      "elapsed_s": 18.94
+    }
+  ],
+  "summary": {
+    "pool_size": {
+      "min": 13,
+      "max": 15,
+      "mean": 13.8,
+      "stdev": 1.1
+    },
+    "pool_collapse_count": 0,
+    "banner_fire_count": 2,
+    "top_3_jaccard_mean": 0.28,
+    "top_5_jaccard_mean": 0.438,
+    "top_1_confidence": {
+      "min": 70,
+      "max": 92,
+      "range": 22,
+      "mean": 83.2,
+      "stdev": 12.05
+    },
+    "elapsed_s_total": 66.91,
+    "elapsed_s_mean": 13.38
+  }
+}
