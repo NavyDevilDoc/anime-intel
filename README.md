@@ -53,7 +53,7 @@ A parallel data layer tracks in-season show performance against structural expec
 [Vercel — Frontend]  ──HTTPS──>  [Railway — Backend]  ──writes──>  [Supabase — Telemetry]
   React SPA (TypeScript)          FastAPI + FAISS                   gemini_calls cost ledger
   Vite + Tailwind v4              Python 3.12                       anon usage log
-                                  SQLite (committed to git)
+                                  SQLite (private deployment artifact)
 ```
 
 ### Retrieval Pipeline
